@@ -560,3 +560,31 @@ AResultCalibration::~AResultCalibration()
     this->results.clear();
     this->conditions.clear();
 }
+QHash<QString, QString> AResultCalibration::getCalculations() const
+{
+    return calculations;
+}
+QHash<QString, AMeasuringDevice> AResultCalibration::getDevices() const
+{
+    return devices;
+}
+QHash<QString, QString> AResultCalibration::getOthers() const
+{
+    return others;
+}
+
+void AMeasuringDevice::addParam(QString key, QString value)
+{
+    if (key=="Type"||key=="SN"||key=="SKN"||key=="SROK") this->param.insert(key, value);
+}
+
+QHash<QString, QString> AMeasuringDevice::getParam() const
+{
+    return param;
+}
+void AMeasuringDevice::setParam(const QHash<QString, QString> &value)
+{
+    param = value;
+}
+
+

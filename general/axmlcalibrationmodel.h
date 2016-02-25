@@ -8,18 +8,34 @@
 #include <QXmlSimpleReader>
 #include <QXmlStreamWriter>
 
+class AMeasuringDevice {
+public:
+    void addParam(QString key, QString value);
+    QHash<QString, QString> getParam() const;
+
+private:
+    QHash<QString, QString> param;
+};
+
 class AResultCalibration {
 public:
     explicit AResultCalibration(QObject * parent = 0);
     ~AResultCalibration();
-    void addResult(QString key, QString value) {results.insert(key, value);}
-    QHash<QString, QString> getResults() {return results;}
+    void addResult(QString key, QString value) {results.insert(key, value);}            //Добавление результата
+    QHash<QString, QString> getResults() {return results;}                              //Получение всех результатов
     QString getRes(QString key) {return results.value(key); }
-    void addCondition(QString key, QString value) {conditions.insert(key, value);}
+    void addCondition(QString key, QString value) {conditions.insert(key, value);}      //Добавление уловия калибровки
     QHash<QString, QString> getConditions() {return conditions;}
+    void addCalulation (QString key, QString value) {calculations.insert(key, value);}
+    QHash<QString, QString> getCalculations() const;
+    QHash<QString, AMeasuringDevice> getDevices() const;
+
 private:
     QHash<QString, QString> results;
     QHash<QString, QString> conditions;
+    QHash<QString, QString> calculations;
+    QHash<QString, AMeasuringDevice> devices;
+    QHash<QString, QString> others;
 };
 
 //----------------------------------------------------------------------------------------------------------------
