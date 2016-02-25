@@ -259,17 +259,52 @@ void EnvironmentDialog::saveEnvironment()
     this->temperature = ui->temperature->text();
     settings->setValue("environment/temperature", temperature);
     this->humidity = ui->humidity->text();
+    settings->setValue("environment/humidity", humidity);
     this->pressure = ui->pressure->text();
+    settings->setValue("environment/pressure", pressure);
     this->voltage = ui->voltage->text();
+    settings->setValue("environment/voltage",voltage);
     this->temperatureDeviceType = ui->temperatureDeviceType->text();
+    settings->setValue("environment/temperatureDeviceType", temperatureDeviceType);
     this->temperatureDeviceZN = ui->temperatureDeviceZN->text();
+    settings->setValue("environment/temperatureDeviceZN",temperatureDeviceZN);
     this->temperatureDeviceSKN = ui->temperatureDeviceSKN->text();
+    settings->setValue("environment/temperatureDeviceSKN",temperatureDeviceSKN);
     this->temperatureDeviceSROK = ui->temperatureDeviceSROK->date();
+    settings->setValue("environment/temperatureDeviceSROK",temperatureDeviceSROK);
+    this->humidityDeviceType = ui->humidityDeviceType->text();
+    settings->setValue("environment/humidityDeviceType", humidityDeviceType);
+    this->humidityDeviceZN = ui->humidityDeviceZN->text();
+    settings->setValue("environment/humidityDeviceZN", humidityDeviceZN);
+    this->humidityDeviceSKN = ui->humidityDeviceSKN->text();
+    settings->setValue("environment/humidityDeviceSKN", humidityDeviceSKN);
+    this->humidityDeviceSROK = ui->humidityDeviceSROK->date();
+    settings->setValue("environment/humidityDeviceSROK", humidityDeviceSROK);
+    this->pressureDeviceType = ui->pressureDeviceType->text();
+    settings->setValue("environment/pressureDeviceType", pressureDeviceType);
+    this->pressureDeviceZN = ui->pressureDeviceZN->text();
+    settings->setValue("environment/pressureDeviceZN", pressureDeviceZN);
+    this->pressureDeviceSKN = ui->pressureDeviceSKN->text();
+    settings->setValue("environment/pressureDeviceSKN", pressureDeviceSKN);
+    this->pressureDeviceSROK = ui->pressureDeviceSROK->date();
+    settings->setValue("environment/pressureDeviceSROK", pressureDeviceSROK);
+    this->voltageDeviceType = ui->voltageDeviceType->text();
+    settings->setValue("environment/voltageDeviceType", voltageDeviceType);
+    this->voltageDeviceZN = ui->voltageDeviceZN->text();
+    settings->setValue("environment/voltageDeviceZN", voltageDeviceZN);
+    this->voltageDeviceSKN = ui->voltageDeviceSKN->text();
+    settings->setValue("environment/voltageDeviceSKN", voltageDeviceSKN);
+    this->voltageDeviceSROK = ui->voltageDeviceSROK->date();
+    settings->setValue("environment/voltageDeviceSROK", voltageDeviceSROK);
+    //Получаем и сохраняем время внесения изменений
+    this->lastEdit = QDateTime::currentDateTime();
+    settings->setValue("environment/lastEdit", lastEdit);
 }
 
 void EnvironmentDialog::accept()
 {
-
+    saveEnvironment();
+    this->close();
     qDebug()<<"Демонстрация настроек";
 }
 
