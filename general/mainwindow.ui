@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>594</width>
+    <height>525</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Программа калибровки измерительных каналов контроллеров</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QHBoxLayout" name="btnEditLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Таблица 1 - Выбор каналов и точек измерения</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="addButton">
+        <property name="text">
+         <string>Добавить</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="cloneButton">
+        <property name="text">
+         <string>Клонировать</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="deleteButton">
+        <property name="minimumSize">
+         <size>
+          <width>75</width>
+          <height>23</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Удалить</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QTableView" name="tableView">
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="gridStyle">
+       <enum>Qt::SolidLine</enum>
+      </property>
+      <property name="sortingEnabled">
+       <bool>false</bool>
+      </property>
+      <attribute name="horizontalHeaderStretchLastSection">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="verticalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="pushButton_2">
+      <property name="text">
+       <string>Калибровать выделенный канал</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTableView" name="calibrateView"/>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Log</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QListView" name="listView"/>
+    </item>
+    <item>
+     <widget class="QDoubleSpinBox" name="doubleSpinBox">
+      <property name="decimals">
+       <number>3</number>
+      </property>
+      <property name="minimum">
+       <double>-100.000000000000000</double>
+      </property>
+      <property name="maximum">
+       <double>1000.000000000000000</double>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QSpinBox" name="spinBox"/>
+    </item>
+    <item>
+     <widget class="QPushButton" name="pushButton">
+      <property name="text">
+       <string>Тест ИКСУ-2000</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>594</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>Файл</string>
+    </property>
+    <addaction name="create_db"/>
+    <addaction name="open_db"/>
+    <addaction name="separator"/>
+    <addaction name="exitAction"/>
+   </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>Настройки программы</string>
+    </property>
+    <widget class="QMenu" name="menu_3">
+     <property name="title">
+      <string>Выбор эталона</string>
+     </property>
+    </widget>
+    <addaction name="menu_3"/>
+    <addaction name="action"/>
+    <addaction name="action_4"/>
+    <addaction name="action_5"/>
+    <addaction name="environmentAction"/>
+   </widget>
+   <addaction name="menu"/>
+   <addaction name="menu_2"/>
+  </widget>
+  <action name="open_db">
+   <property name="text">
+    <string>Открыть базу</string>
+   </property>
+  </action>
+  <action name="action_4">
+   <property name="text">
+    <string>Выбор модели измерений</string>
+   </property>
+  </action>
+  <action name="action_5">
+   <property name="text">
+    <string>Настройки калибровки</string>
+   </property>
+  </action>
+  <action name="create_db">
+   <property name="text">
+    <string>Создать базу</string>
+   </property>
+  </action>
+  <action name="exitAction">
+   <property name="text">
+    <string>Выход</string>
+   </property>
+  </action>
+  <action name="action1">
+   <property name="text">
+    <string>1</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string>Настройки эталона</string>
+   </property>
+  </action>
+  <action name="environmentAction">
+   <property name="text">
+    <string>Условия калибровки</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Перед началом калибровки необходимо определить условия в которых она будет проходить.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections/>
+</ui>
