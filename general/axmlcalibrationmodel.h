@@ -8,11 +8,12 @@
 #include <QXmlSimpleReader>
 #include <QXmlStreamWriter>
 
+//Класс измерительного прибора
 class AMeasuringDevice {
 public:
-    void addParam(QString key, QString value);
-    QHash<QString, QString> getParam() const;
-
+    void addParam(QString key, QString value);              //добавление параметра прибору
+    QHash<QString, QString> getParam() const;               //Получение параметров
+    void setParam(const QHash<QString, QString> &value);    //установка всех параметров
 private:
     QHash<QString, QString> param;
 };
@@ -21,14 +22,23 @@ class AResultCalibration {
 public:
     explicit AResultCalibration(QObject * parent = 0);
     ~AResultCalibration();
+    //--------------Результаты измерений--------
     void addResult(QString key, QString value) {results.insert(key, value);}            //Добавление результата
     QHash<QString, QString> getResults() {return results;}                              //Получение всех результатов
     QString getRes(QString key) {return results.value(key); }
+    //----------Условия калибровки--------------
     void addCondition(QString key, QString value) {conditions.insert(key, value);}      //Добавление уловия калибровки
     QHash<QString, QString> getConditions() {return conditions;}
+    //-----------Расчетные параметры------------
     void addCalulation (QString key, QString value) {calculations.insert(key, value);}
     QHash<QString, QString> getCalculations() const;
+    QString getCalculation(QString key) {return calculations.value(key);}
+    //-----------Измерительные приборы----------
     QHash<QString, AMeasuringDevice> getDevices() const;
+    //------------Прочие параметры--------------
+    void addOther(QString key, QString value) {others.insert(key, value) ;}
+    QHash<QString, QString> getOthers() const;
+    QString getOther(QString key) {return others.value(key);}                           //Получение параметра
 
 private:
     QHash<QString, QString> results;

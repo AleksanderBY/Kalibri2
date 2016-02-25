@@ -1,5 +1,6 @@
 #include "axmlcalibrationmodel.h"
 #include <QDebug>
+#include <math.h>
 
 
 AXMLCalibrationModel::AXMLCalibrationModel(ADomCalibration *dom, int level, QObject *parent) : QAbstractTableModel(parent)
@@ -286,22 +287,38 @@ bool ADomCalibration::parsing()
                         result->addResult(attr.name().toString(), attr.value().toString());
                     }
                 //Добавляем точку калибровки если её нет
-                if (!result->getResults().contains("point")) result->addResult("point", channel->getChannelData().value("point"+QString::number(channel->getResultsCount()+1)));
+                if (!result->getOthers().contains("point")) result->addOther("point", channel->getChannelData().value("point"+QString::number(channel->getResultsCount()+1)));
                 //Добавляем среднее значение если его нет
-                if (!result->getResults().contains("av")) {
+                if (!result->getCalculations().contains("av")) {
                     double summa = 0;
                     for (int i=1; i<=10; i++) {
                         summa += result->getRes("V"+QString::number(i)).toDouble();
                     }
                     double av = summa/10;
-                    result->addResult("av", QString::number(av, 'g', 12));
+                    result->addCalulation("av", QString::number(av, 'g', 12));
                 }
                 //Добавляем отклонение если его нет
-                if (!result->getResults().contains("delta")) {
-                    double av = result->getRes("av").toDouble();
-                    double point = result->getRes("point").toDouble();
+                if (!result->getCalculations().contains("delta")) {
+                    double av = result->getCalculation("av").toDouble();
+                    //qDebug()<<QString::number(av,'g',12);
+                    double point = result->getOther("point").toDouble();
                     double delta = point - av;
-                    result->addResult("delta", QString::number(delta, 'g', 12));
+                    qDebug()<<delta;
+                    result->addCalulation("delta", QString::number(delta, 'g', 12));
+                }
+
+                //Добавляем неопределенность измерения если его нет
+                if (!result->getCalculations().contains("neoprIzm"))
+                {
+                    double av = result->getCalculation("av").toDouble();
+                    double point = result->getOther("point").toDouble();
+                    double summa = 0;
+                    for (int i=1; i<=10; i++) {
+                        summa += pow(result->getRes("V"+QString::number(i)).toDouble()-av, 2);
+                    }
+                    summa = summa/90;
+                    summa = sqrt(summa);
+                    result->addCalulation("neoprIzm", QString::number(summa, 'g', 12));
                 }
                 channel->addResultCalibration(result);
 
@@ -318,7 +335,7 @@ bool ADomCalibration::parsing()
                     result=channel->getResult(i);
                     foreach (QXmlStreamAttribute attr, temp) {
                         //qDebug()<<attr.name().toString();
-                        result->addResult(attr.name().toString(), attr.value().toString());
+                        result->addOther(attr.name().toString(), attr.value().toString());
                     }
                 }
                 break;
@@ -480,11 +497,12 @@ QVariant AXMLCalibrationResultModel::data(const QModelIndex &index, int role) co
         if (index.column()>2&&index.column()<13) {
             return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getRes("V"+QString::number(index.column()-2));
         }
-        if (index.column()==0) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getRes("point");
-        if (index.column()==1) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getRes("date");
-        if (index.column()==2) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getRes("time");
-        if (index.column()==13) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getRes("av");
-        if (index.column()==14) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getRes("delta");
+        if (index.column()==0) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getOther("point");
+        if (index.column()==1) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getOther("date");
+        if (index.column()==2) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getOther("time");
+        if (index.column()==13) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("av");
+        if (index.column()==14) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("delta");
+        if (index.column()==15) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("neoprIzm");
         return 1;//dom->getChannel(index.row()).getChannelData().value(dom->getSetting("field"+QString::number(index.column())));
         break;
     case Qt::EditRole:
