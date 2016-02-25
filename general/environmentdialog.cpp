@@ -254,8 +254,22 @@ void EnvironmentDialog::loadEnvironment()
     this->lastEdit = settings->value("environment/lastEdit").toDateTime();
 }
 
-void EnvironmentDialog::showEvent(QShowEvent *event)
+void EnvironmentDialog::saveEnvironment()
 {
+    this->temperature = ui->temperature->text();
+    settings->setValue("environment/temperature", temperature);
+    this->humidity = ui->humidity->text();
+    this->pressure = ui->pressure->text();
+    this->voltage = ui->voltage->text();
+    this->temperatureDeviceType = ui->temperatureDeviceType->text();
+    this->temperatureDeviceZN = ui->temperatureDeviceZN->text();
+    this->temperatureDeviceSKN = ui->temperatureDeviceSKN->text();
+    this->temperatureDeviceSROK = ui->temperatureDeviceSROK->date();
+}
+
+void EnvironmentDialog::accept()
+{
+
     qDebug()<<"Демонстрация настроек";
 }
 

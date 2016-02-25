@@ -110,7 +110,9 @@ private:
 
     void loadEnvironment();         //Загрузка условий
     void saveEnvironment();         //Сохранение условий
-    void showEvent(QShowEvent * event);
+
+public slots:
+    void accept();
 
 };
 
