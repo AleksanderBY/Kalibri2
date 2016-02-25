@@ -61,6 +61,8 @@ private slots:
 
     void on_environmentAction_triggered();
 
+    void on_saveAction_triggered();
+
 signals:
 
     startWork(bool start);

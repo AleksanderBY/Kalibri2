@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<body driver="trei5b.dll" fieldscount="14" field0="controller" field1="module" field2="pipe" field3="cipher" field4="name" field5="type" field6="min" field7="max" field8="unit" field9="adress" field10="point1" field11="point2" field12="point3" field13="point4">
+	<channel controller="8K5TREI" module="1" pipe="1" cipher="8К__ИТ01" name="Температура мет. трубы №1 выходного коллектора НРЧ, справа" type="TC-K-M" min="0" max="600" unit="°С" adress="1770" point1="30" point2="345" point3="390" point4="-">
+		<results1 V1="29.9649734" V2="29.9657478" V3="29.9710102" V4="29.9708919" V5="29.9665260" V6="29.9652938" V7="29.9716262" V8="29.9706840" V9="29.9706802" V10="29.9719390"/>
+		<results2 V1="344.917724" V2="344.914123" V3="344.916137" V4="344.912902" V5="344.913635" V6="344.971557" V7="344.973388" V8="344.968078" V9="344.971069" V10="344.973205"/>
+		<results3 V1="389.960723" V2="389.957092" V3="390.062225" V4="390.067626" V5="390.068603" V6="390.072814" V7="390.067016" V8="390.070251" V9="390.068939" V10="390.068695"/>
+		<conditions temperature="22" humidity="73" pressure="98,7" voltage="225"/>
+		<event_time date="31.03.2010" time="13:44:20"/>
+		<generalSI>
+			<SI Tip="ИКСУ-2000" NZ="23-0035" NP="" DO=""/>
+			<SI Tip="Магазин сопротивлений МСР-63" NZ="01548" NP="" DO=""/>
+		</generalSI>
+		<secondarySI>
+			<SI Tip="Мультиметр цифровой MY-68" NZ="09040065561" NP="3250/Э" DO="30.10.2010"/>
+			<SI Tip="Барометр-анероид М67" NZ="1542" NP="" DO=""/>
+			<SI Tip="Термометр лабораторный ТЛ-4" NZ="1295" NP="" DO=""/>
+			<SI Tip="Гигрометр психрометрический ВИТ-1" NZ="" NP="" DO=""/>
+		</secondarySI>
+	</channel>
+</body>

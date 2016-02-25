@@ -165,22 +165,59 @@ void ADomCalibration::clear()
 
 bool ADomCalibration::save(QString fileName)
 {
-//    QFile file;
-//    file.setFileName(fileName);
-//    if (!file.open(QIODevice::WriteOnly|QIODevice::Text)){
-//        return false;
-//    }
-//    writer->setAutoFormatting(true);
-//    writer->setDevice(&file);
-//    writer->writeStartDocument();
-//    writer->writeStartElement("body");
-//    writer->writeAttributes(this->bodyAttributes);
-//    for (int i=0; i<channelList.count(); i++){
-//        writer->writeStartElement("channel");
-//        writer->writeAttributes(channelList.at(i).getChannelAttributes());
-//        writer->writeEndElement();
-//    }
-//    writer->writeEndDocument();
+    QFile file;
+    file.setFileName("test.xml");
+    if (!file.open(QIODevice::WriteOnly|QIODevice::Text)){
+        return false;
+    }
+    writer->setAutoFormatting(true);
+    writer->setDevice(&file);
+    writer->writeStartDocument();
+    writer->writeStartElement("body");
+    //QXmlStreamAttribute attr;
+    QHash<QString, QString>::iterator iter;
+    QHash<QString, QString> map = this->getSettings();
+    for (iter = map.begin(); iter != map.end(); ++iter){
+        writer->writeAttribute(iter.key(),iter.value());
+    }
+    for (int i=0; i<channelList.count(); i++){
+        writer->writeStartElement("channel");
+        map = this->getChannel(i)->getChannelData();
+        for (iter = map.begin(); iter != map.end(); ++iter){
+            writer->writeAttribute(iter.key(),iter.value());
+        }
+        for (int j=0; j<this->getChannel(i)->getResultsCount(); j++){
+            writer->writeStartElement("calibration");
+            map = this->getChannel(i)->getResult(j)->getOthers();
+            for (iter = map.begin(); iter != map.end(); ++iter){
+                writer->writeAttribute(iter.key(),iter.value());
+            }
+
+            writer->writeStartElement("results");
+            map = this->getChannel(i)->getResult(j)->getResults();
+            for (iter = map.begin(); iter != map.end(); ++iter){
+                writer->writeAttribute(iter.key(),iter.value());
+            }
+            writer->writeEndElement();
+
+            writer->writeStartElement("conditions");
+            map = this->getChannel(i)->getResult(j)->getConditions();
+            for (iter = map.begin(); iter != map.end(); ++iter){
+                writer->writeAttribute(iter.key(),iter.value());
+            }
+            writer->writeEndElement();
+
+            writer->writeStartElement("devices");
+            writer->writeEndElement();
+
+
+            writer->writeEndElement();
+        }
+
+
+        writer->writeEndElement();
+    }
+    writer->writeEndDocument();
     return true;
 }
 
@@ -219,7 +256,7 @@ bool ADomCalibration::parsing()
             switch (tag) {
             case 0:{
                 //Проверяем правильную последовательность тэгов
-                qDebug()<<lastTag;
+                //qDebug()<<lastTag;
                 if (lastTag!=-1) {
                     log(tr("Ошибка файла: неправильная вложенность тегов"), Qt::red);
                     return false;
@@ -292,9 +329,10 @@ bool ADomCalibration::parsing()
                 if (!result->getCalculations().contains("av")) {
                     double summa = 0;
                     for (int i=1; i<=10; i++) {
-                        summa += result->getRes("V"+QString::number(i)).toDouble();
+                        summa = summa+result->getRes("V"+QString::number(i)).replace(',','.').toDouble();
                     }
                     double av = summa/10;
+                    //qDebug()<<summa;
                     result->addCalulation("av", QString::number(av, 'g', 12));
                 }
                 //Добавляем отклонение если его нет
@@ -303,7 +341,7 @@ bool ADomCalibration::parsing()
                     //qDebug()<<QString::number(av,'g',12);
                     double point = result->getOther("point").toDouble();
                     double delta = point - av;
-                    qDebug()<<delta;
+                    //qDebug()<<delta;
                     result->addCalulation("delta", QString::number(delta, 'g', 12));
                 }
 
@@ -311,7 +349,6 @@ bool ADomCalibration::parsing()
                 if (!result->getCalculations().contains("neoprIzm"))
                 {
                     double av = result->getCalculation("av").toDouble();
-                    double point = result->getOther("point").toDouble();
                     double summa = 0;
                     for (int i=1; i<=10; i++) {
                         summa += pow(result->getRes("V"+QString::number(i)).toDouble()-av, 2);
@@ -340,8 +377,20 @@ bool ADomCalibration::parsing()
                 }
                 break;
             }
-            case 4:
-                break;
+            case 4:{
+                AChannelCalibration * channel = getChannel(channelCount()-1);
+                temp = reader->attributes();
+                //Временно для старого формата файлов
+                AResultCalibration * result;
+                for (int i=0; i<channel->getResultsCount();i++)
+                {
+                    result=channel->getResult(i);
+                    foreach (QXmlStreamAttribute attr, temp) {
+                        //qDebug()<<attr.name().toString();
+                        result->addCondition(attr.name().toString(), attr.value().toString());
+                    }
+                }
+                break;}
             case 5:
                 break;
             default:{
@@ -484,7 +533,7 @@ int AXMLCalibrationResultModel::rowCount(const QModelIndex &parent) const
 int AXMLCalibrationResultModel::columnCount(const QModelIndex &parent) const
 {
     if (!dom->isDomValid()) return 0;
-    return 16;
+    return 20;
 }
 
 QVariant AXMLCalibrationResultModel::data(const QModelIndex &index, int role) const
@@ -503,6 +552,10 @@ QVariant AXMLCalibrationResultModel::data(const QModelIndex &index, int role) co
         if (index.column()==13) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("av");
         if (index.column()==14) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("delta");
         if (index.column()==15) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("neoprIzm");
+        if (index.column()==16) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("temperature");
+        if (index.column()==17) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("humidity");
+        if (index.column()==18) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("pressure");
+        if (index.column()==19) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("voltage");
         return 1;//dom->getChannel(index.row()).getChannelData().value(dom->getSetting("field"+QString::number(index.column())));
         break;
     case Qt::EditRole:
@@ -593,7 +646,7 @@ QHash<QString, QString> AResultCalibration::getOthers() const
 
 void AMeasuringDevice::addParam(QString key, QString value)
 {
-    if (key=="Type"||key=="SN"||key=="SKN"||key=="SROK") this->param.insert(key, value);
+    if (key=="Type"||key=="SN"||key=="SKN"||key=="SROK"||key=="role") this->param.insert(key, value);
 }
 
 QHash<QString, QString> AMeasuringDevice::getParam() const

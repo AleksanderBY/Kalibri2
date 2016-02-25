@@ -29,6 +29,7 @@ public:
     //----------Условия калибровки--------------
     void addCondition(QString key, QString value) {conditions.insert(key, value);}      //Добавление уловия калибровки
     QHash<QString, QString> getConditions() {return conditions;}
+    QString getCondition(QString key) {return conditions.value(key);}
     //-----------Расчетные параметры------------
     void addCalulation (QString key, QString value) {calculations.insert(key, value);}
     QHash<QString, QString> getCalculations() const;

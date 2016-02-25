@@ -166,6 +166,7 @@
     </property>
     <addaction name="create_db"/>
     <addaction name="open_db"/>
+    <addaction name="saveAction"/>
     <addaction name="separator"/>
     <addaction name="exitAction"/>
    </widget>
@@ -228,6 +229,11 @@
    </property>
    <property name="toolTip">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Перед началом калибровки необходимо определить условия в которых она будет проходить.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="saveAction">
+   <property name="text">
+    <string>Сохранить базу</string>
    </property>
   </action>
  </widget>

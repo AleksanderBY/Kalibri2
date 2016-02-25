@@ -625,3 +625,8 @@ void MainWindow::on_environmentAction_triggered()
     ed.setModal(true);
     ed.exec();
 }
+
+void MainWindow::on_saveAction_triggered()
+{
+    this->dom->save("sdf");
+}
