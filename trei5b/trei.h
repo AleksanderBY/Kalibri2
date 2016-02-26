@@ -21,7 +21,7 @@ public:
     int createDevice(QString desk) Q_DECL_OVERRIDE;
     QString getLastError() Q_DECL_OVERRIDE;
     bool getValues(int device, QMap<QString, float> *valuesList) Q_DECL_OVERRIDE;
-    bool getValues(QList<PollClass *> poll) Q_DECL_OVERRIDE;
+    bool getValues(QList<PollClass *> *pollList) Q_DECL_OVERRIDE;
     QList<double> getValues(QList<QSqlRecord> *sgList) Q_DECL_OVERRIDE;
     bool getFieldsDB(QMap<QString, QString> *fieldsDB) Q_DECL_OVERRIDE;             //Получение полей базы данных
     QStringList* supportTypes() Q_DECL_OVERRIDE;

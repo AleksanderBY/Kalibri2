@@ -9,8 +9,15 @@
 #include <QSqlRecord>
 #include <QHash>
 
+//------------------------------------------------------------------------------------------------------------------
+//                        Класс для запроса параметров из устройства
+//
+//      В attr помещаются все параметры измерительного канала, заданые для данного типа устройства
+//      Возвращаемое значение необходимо помещать в value
+//------------------------------------------------------------------------------------------------------------------
 class PollClass
 {
+public:
     double value;
     QHash<QString,QString> attr;
 };
@@ -25,7 +32,7 @@ public:
     virtual int createDevice(QString name) = 0;
     virtual QString getLastError() = 0;
     virtual bool getValues(int device, QMap<QString, float> *valuesList) = 0;
-    virtual bool getValues(QList<PollClass *> poll) = 0;
+    virtual bool getValues(QList<PollClass *> * pollList) = 0;                    //Запрос данных от устройства
     virtual QList<double> getValues(QList<QSqlRecord> *sgList) = 0;
     virtual bool getFieldsDB(QMap<QString, QString> *fieldsDB) = 0;         //Получение полей базы данных
     virtual QStringList* supportTypes() = 0;

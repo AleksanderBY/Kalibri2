@@ -501,13 +501,25 @@ void MainWindow::on_pushButton_2_clicked()
     //Определяем список индексов каналов калибровки
     QModelIndexList calibrateIDList = ui->tableView->selectionModel()->selectedRows();
     //
-    AChannelCalibration * channel;
-    QList<QHash<QString, QString> > * list = new  QList<QHash<QString, QString> >;
+    QList<PollClass*> * pollList = new QList<PollClass*>;
     foreach (QModelIndex index, calibrateIDList) {
-        channel = dom->getChannel(index.row());
-        list->push_back(channel->getChannelData());
+        PollClass * poll = new PollClass();
+        QHash<QString, QString> attr = dom->getChannel(index.row())->getChannelData();
+        poll->attr = attr;
+        pollList->push_back(poll);
+     }
+    this->connectDriver->getValues(pollList);
+    for (int i=0; i<pollList->count();i++) {
+        qDebug()<<QString::number(pollList->at(i)->value, 'g' ,12);
     }
-    qDebug()<<list->count();
+
+//    AChannelCalibration * channel;
+//    QList<QHash<QString, QString> > * list = new  QList<QHash<QString, QString> >;
+//    foreach (QModelIndex index, calibrateIDList) {
+//        channel = dom->getChannel(index.row());
+//        list->push_back(channel->getChannelData());
+//    }
+//    qDebug()<<list->count();
 //    //выходим если нет выбранных каналов
 //    if (calibrateIDList.count()<0) return;
 //    //Очищаем и заполняем поля калибратора новыми каналами
@@ -560,48 +572,66 @@ void MainWindow::timer_overflow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    measurement m;
-    switch (ui->spinBox->value()) {
-    case 0: m=mA;
-        break;
-    case 1: m=mV;
-        break;
-    case 2: m=V;
-        break;
-    case 3: m=Om;
-        break;
-    case 4: m=C100M1_426;
-        break;
-    case 5: m=C100M1_428;
-        break;
-    case 6: m=C50M1_426;
-        break;
-    case 7: m=C50M1_428;
-        break;
-    case 8: m=C50P;
-        break;
-    case 9: m=C100P;
-        break;
-    case 10: m=CPt100IEC385;
-        break;
-    case 11: m=CTypeJ;
-        break;
-    case 12: m=CTypeK;
-        break;
-    case 13: m=CTypeB;
-        break;
-    case 14: m=CTypeA1;
-        break;
-    case 15: m=CTypeS;
-        break;
-    case 16: m=CTypeXK;
-        break;
-    default:
-        m=mA;
-        break;
+//    measurement m;
+//    switch (ui->spinBox->value()) {
+//    case 0: m=mA;
+//        break;
+//    case 1: m=mV;
+//        break;
+//    case 2: m=V;
+//        break;
+//    case 3: m=Om;
+//        break;
+//    case 4: m=C100M1_426;
+//        break;
+//    case 5: m=C100M1_428;
+//        break;
+//    case 6: m=C50M1_426;
+//        break;
+//    case 7: m=C50M1_428;
+//        break;
+//    case 8: m=C50P;
+//        break;
+//    case 9: m=C100P;
+//        break;
+//    case 10: m=CPt100IEC385;
+//        break;
+//    case 11: m=CTypeJ;
+//        break;
+//    case 12: m=CTypeK;
+//        break;
+//    case 13: m=CTypeB;
+//        break;
+//    case 14: m=CTypeA1;
+//        break;
+//    case 15: m=CTypeS;
+//        break;
+//    case 16: m=CTypeXK;
+//        break;
+//    default:
+//        m=mA;
+//        break;
+//    }
+//    //CPADriver->setup();
+//    CPADriver->setValue(ui->doubleSpinBox->value(), m);
+
+
+//-------------------------------------------------------------------------------------------------------------
+//
+//                  Тест запроса к контроллеру
+//
+//-------------------------------------------------------------------------------------------------------------
+    PollClass * poll = new PollClass();
+    QHash<QString, QString> attr = dom->getChannel(dom->getCurrentChannel())->getChannelData();
+    poll->attr = attr;
+    QList<PollClass*> * pollList = new QList<PollClass*>;
+    pollList->push_back(poll);
+    this->connectDriver->getValues(pollList);
+    for (int i=0; i<pollList->count();i++) {
+        qDebug()<<QString::number(pollList->at(i)->value, 'g' ,12);
     }
-    //CPADriver->setup();
-    CPADriver->setValue(ui->doubleSpinBox->value(), m);
+
+
 }
 
 //Изменение пункта меню

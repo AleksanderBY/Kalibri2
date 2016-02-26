@@ -30,7 +30,7 @@ bool Trei::initialization(QAbstractItemModel *model)
     if (err == SOCKET_ERROR)
     {
         lastError="Не удалось инициализировать библиотеку WINSOCK2";
-        return err;
+        return false;
     }
     return true;
 }
@@ -48,11 +48,11 @@ int Trei::createDevice(QString desk)
     //Получаем информацию о подключении из хоста
     LPHOSTENT hostEnt;
     hostEnt = gethostbyname(desk.toLocal8Bit().data());
-    qDebug()<<hostEnt->h_name;
-    qDebug()<<hostEnt->h_addrtype;
-    qDebug()<<hostEnt->h_addr_list;
-    qDebug()<<hostEnt->h_aliases;
-    qDebug()<<hostEnt->h_length;
+//    qDebug()<<hostEnt->h_name;
+//    qDebug()<<hostEnt->h_addrtype;
+//    qDebug()<<hostEnt->h_addr_list;
+//    qDebug()<<hostEnt->h_aliases;
+//    qDebug()<<hostEnt->h_length;
     //gethostbyaddr("192.168.10.241",4,2);
     //устанавливаем соединение с контроллером
     int socket;
@@ -114,9 +114,93 @@ bool Trei::getValues(int device, QMap<QString, float> *valuesList)
     return true;
 }
 
-bool Trei::getValues(QList<PollClass *> poll)
+bool Trei::getValues(QList<PollClass *> *pollList)
 {
+    //Создаем список необходимых устройств (как правило будет одно)
+    QMap<QString, int> controllerList;
+    for (int i=0; i<pollList->count();i++) {
+        //Проверяем существует ли поле имени контроллера в запросе
+        if (pollList->at(i)->attr.contains("controller")) {
+            qDebug()<<"Контроллер: "+pollList->at(i)->attr.value("controller");
+            //Проверяем добавлен ли уже контроллер в список
+            if (!controllerList.contains(pollList->at(i)->attr.value("controller"))) {
+               //создаем соединение с контроллером
+               int controllerDevice = this->createDevice(pollList->at(i)->attr.value("controller"));
+               //если соединение успешно то добавляем его в список
+               if (controllerDevice) {
+                   controllerList.insert(pollList->at(i)->attr.value("controller"), controllerDevice);
+                   qDebug()<<"Socket:"+QString::number(controllerDevice);
+               }
+               else
+               {
+                   qDebug()<<"Ошибка связи";
+                   return false;
+               }
+            }
+        }
+        else
+        {
+            //возвращаем ошибку
+            this->lastError = "Не правильный запрос: Не существует поле 'controller'";
+            return false;
+        }
+    }
+    //----------------------------------------------------------------
+    //              Запрос параметров
+    //--------------------------------------------------------------
+    foreach (QString key, controllerList.keys()) {
+        //Создаем буферы для запроса и ответа
+        uchar *question_buf = new uchar[1024];
+        uchar *answer_buf = new uchar[1024];
+        //Подготавливаем список к отправке в контроллер
+        net_open_list(question_buf,1,0);
+        bool ok;
+        //Помещаем адреса в список
+        for (int i=0; i<pollList->count();i++) {
+            //Проверяем текущий ли контроллер
+            if (pollList->at(i)->attr.value("controller")==key) {
+                //Проверяем существует ли поле adress
+                if (pollList->at(i)->attr.contains("adress")) {
+                    //Преобразуем адрес в десятичное число
+                    quint16 adrr = pollList->at(i)->attr.value("adress").toInt(&ok,16);
+                    qDebug()<<adrr;
+                    //Если преобразование успешно то добавляем в список
+                    if (ok) net_add_list(adrr);
+                    else {
+                        qDebug()<<"Неправильный формат поля адреса";
+                        return false;
+                    }
+                }
+                else {
+                    qDebug()<<"Отсутствует поле adress";
+                    return false;
+                }
+            }
+        }
+        //Закрываем список
+        net_close_list();
+        //--- Отправляем запрос контроллеру
+        net_tcp_request(controllerList.value(key), question_buf, answer_buf);
+        //Проверяем статус ответа
+        if (!net_status_list(answer_buf)) qDebug()<<"Ответ получен";
+        else {
+            qDebug()<<"Получен неправильный ответ контроллера";
+            return false;
+        }
 
+        //-- Извлекаем данные из буфера ответа
+
+        for (int i=0; i<pollList->count();i++) {
+            if (pollList->at(i)->attr.value("controller")==key) {
+                float val;
+                net_get_list(&val);
+                pollList->at(i)->value=val;
+                //qDebug()<<val;
+            }
+        }
+
+    }
+    return true;
 }
 
 QList<double> Trei::getValues(QList<QSqlRecord> *sgList)
