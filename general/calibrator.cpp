@@ -105,7 +105,7 @@ void Calibrator::on_set_next_point_complete(bool complete)
         }
        //отправляем запрос
 
-        data->getValues(currentRequest);
+        //data->getValues(currentRequest);
 
 
         qDebug()<< "Точка задана калибруем";

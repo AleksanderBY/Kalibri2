@@ -9,7 +9,7 @@
 #include <QMap>
 #include "dialog.h"
 
-class Trei: public QObject, public DataInterface
+class Trei: public DataInterface
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "by.alexpozniak.kalibri2.datainterface" FILE "treiplugin.json")
@@ -18,17 +18,12 @@ public:
     Trei();
     QString getName() Q_DECL_OVERRIDE;
     bool initialization(QAbstractItemModel * model) Q_DECL_OVERRIDE;
-    int createDevice(QString desk) Q_DECL_OVERRIDE;
     QString getLastError() Q_DECL_OVERRIDE;
-    bool getValues(int device, QMap<QString, float> *valuesList) Q_DECL_OVERRIDE;
     bool getValues(QList<PollClass *> *pollList) Q_DECL_OVERRIDE;
-    QList<double> getValues(QList<QSqlRecord> *sgList) Q_DECL_OVERRIDE;
     bool getFieldsDB(QMap<QString, QString> *fieldsDB) Q_DECL_OVERRIDE;             //Получение полей базы данных
     QStringList* supportTypes() Q_DECL_OVERRIDE;
     int editDialog(int row) Q_DECL_OVERRIDE;
-    int getDeviceField() Q_DECL_OVERRIDE;
-    int getTagField() Q_DECL_OVERRIDE;
-    QList<int> getPointsFields() Q_DECL_OVERRIDE;
+    QList<double> getPoints(QList<PollClass *> * pollList) Q_DECL_OVERRIDE;
     QList<double> getParametrValue(QSqlRecord record) Q_DECL_OVERRIDE;
     QString getTagAdress(QSqlRecord record) Q_DECL_OVERRIDE;
 private:
@@ -37,6 +32,7 @@ private:
     QString lastError;
     QStringList supportTypesList;
     Dialog  dlg;
+    int createDevice(QString desk);
 
 };
 

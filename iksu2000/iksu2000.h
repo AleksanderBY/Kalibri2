@@ -10,6 +10,7 @@
 #include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QDate>
+#include <QThread>
 
 
 

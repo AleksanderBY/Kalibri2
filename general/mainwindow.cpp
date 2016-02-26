@@ -29,7 +29,9 @@ MainWindow::MainWindow(QWidget *parent) :
     settings = new QSettings("settings.ini" , QSettings::IniFormat);
     //Загружаем сохранненные настройки
     currentCPADriver = settings->value("kalibri2/currentCPADriver", "iksu2000.dll").toString();
-
+    //***************************************************
+    //      Инициализация задатчика
+    //***************************************************
     //Устанавливаем каталог драйверов задачиков
     this->CPADriverDir = new QDir(qApp->applicationDirPath());
     CPADriverDir->cd("CPADrivers");
@@ -40,6 +42,8 @@ MainWindow::MainWindow(QWidget *parent) :
     filterList<<"*.dll";
     //Инициализируем список драйверов задатчиков
     CPADrivers = new QMap<QString, QString>;
+    //Создаем поток для выполнения задатчика
+    CPADriverThread = new QThread(this);
     //Заполняем список драйверов задатчиков
     foreach (QString fileName, CPADriverDir->entryList(filterList, QDir::Files))
     {
@@ -453,11 +457,13 @@ bool MainWindow::loadConnectPlugin(QString fileName)
 //смена драйвера задатчика
 bool MainWindow::changeCPADriver(QString fileName)
 {
+    //Останавливаем поток если он запущен
+    //if (CPADriverThread->isRunning()) CPADriverThread->quit();
     //если имя драйвера присутствует в списке
     if (CPADrivers->contains(fileName)) {
         //qDebug()<<CPADriver;
         if (CPADriver) {
-            qDebug()<<"выгрузка плагина";
+            //qDebug()<<"выгрузка плагина";
             //Уничтожение старого плагина
             CPAInterface * del = CPADriver;
             CPADriver = 0;
@@ -469,8 +475,10 @@ bool MainWindow::changeCPADriver(QString fileName)
         CPADriver = qobject_cast<CPAInterface * >(CPAPluginLoader->instance());
         connect(CPADriver, SIGNAL(log(QString,Qt::GlobalColor)), logger, SLOT(on_log(QString,Qt::GlobalColor)));
         CPADriver->initialization(settings);
+        qDebug()<<CPADriver->thread();
+        CPADriver->moveToThread(CPADriverThread);
         settings->setValue("kalibri2/currentCPADriver", fileName);
-
+        CPADriverThread->start();
         return true;
     }
     return false;
@@ -508,10 +516,17 @@ void MainWindow::on_pushButton_2_clicked()
         poll->attr = attr;
         pollList->push_back(poll);
      }
-    this->connectDriver->getValues(pollList);
-    for (int i=0; i<pollList->count();i++) {
-        qDebug()<<QString::number(pollList->at(i)->value, 'g' ,12);
+    QList<double> pointList = this->connectDriver->getPoints(pollList);
+
+    for (int i=0; i<pointList.count(); i++)
+    {
+        qDebug()<<pointList.at(i);
     }
+
+    //this->connectDriver->getValues(pollList);
+    //for (int i=0; i<pollList->count();i++) {
+//        qDebug()<<QString::number(pollList->at(i)->value, 'g' ,12);
+//    }
 
 //    AChannelCalibration * channel;
 //    QList<QHash<QString, QString> > * list = new  QList<QHash<QString, QString> >;
@@ -572,64 +587,49 @@ void MainWindow::timer_overflow()
 
 void MainWindow::on_pushButton_clicked()
 {
-//    measurement m;
-//    switch (ui->spinBox->value()) {
-//    case 0: m=mA;
-//        break;
-//    case 1: m=mV;
-//        break;
-//    case 2: m=V;
-//        break;
-//    case 3: m=Om;
-//        break;
-//    case 4: m=C100M1_426;
-//        break;
-//    case 5: m=C100M1_428;
-//        break;
-//    case 6: m=C50M1_426;
-//        break;
-//    case 7: m=C50M1_428;
-//        break;
-//    case 8: m=C50P;
-//        break;
-//    case 9: m=C100P;
-//        break;
-//    case 10: m=CPt100IEC385;
-//        break;
-//    case 11: m=CTypeJ;
-//        break;
-//    case 12: m=CTypeK;
-//        break;
-//    case 13: m=CTypeB;
-//        break;
-//    case 14: m=CTypeA1;
-//        break;
-//    case 15: m=CTypeS;
-//        break;
-//    case 16: m=CTypeXK;
-//        break;
-//    default:
-//        m=mA;
-//        break;
-//    }
-//    //CPADriver->setup();
-//    CPADriver->setValue(ui->doubleSpinBox->value(), m);
-
-
-//-------------------------------------------------------------------------------------------------------------
-//
-//                  Тест запроса к контроллеру
-//
-//-------------------------------------------------------------------------------------------------------------
-    PollClass * poll = new PollClass();
-    QHash<QString, QString> attr = dom->getChannel(dom->getCurrentChannel())->getChannelData();
-    poll->attr = attr;
-    QList<PollClass*> * pollList = new QList<PollClass*>;
-    pollList->push_back(poll);
-    this->connectDriver->getValues(pollList);
-    for (int i=0; i<pollList->count();i++) {
-        qDebug()<<QString::number(pollList->at(i)->value, 'g' ,12);
+    measurement m;
+    switch (ui->spinBox->value()) {
+    case 0: m=mA;
+        break;
+    case 1: m=mV;
+        break;
+    case 2: m=V;
+        break;
+    case 3: m=Om;
+        break;
+    case 4: m=C100M1_426;
+        break;
+    case 5: m=C100M1_428;
+        break;
+    case 6: m=C50M1_426;
+        break;
+    case 7: m=C50M1_428;
+        break;
+    case 8: m=C50P;
+        break;
+    case 9: m=C100P;
+        break;
+    case 10: m=CPt100IEC385;
+        break;
+    case 11: m=CTypeJ;
+        break;
+    case 12: m=CTypeK;
+        break;
+    case 13: m=CTypeB;
+        break;
+    case 14: m=CTypeA1;
+        break;
+    case 15: m=CTypeS;
+        break;
+    case 16: m=CTypeXK;
+        break;
+    default:
+        m=mA;
+        break;
     }
+    //CPADriver->setup();
+    qDebug()<<CPADriver->thread();
+    CPADriver->setValue(ui->doubleSpinBox->value(), m);
 
 
 }
@@ -646,6 +646,8 @@ void MainWindow::on_changeCPA(bool checked)
 
 void MainWindow::on_action_triggered()
 {
+   //qDebug()<<connectDriver->thread();
+    qDebug()<<CPADriver->thread();
     CPADriver->setup();
 }
 

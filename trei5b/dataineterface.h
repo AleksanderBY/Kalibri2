@@ -23,23 +23,18 @@ public:
 };
 
 
-class DataInterface
+class DataInterface: public QObject
 {
 public:
     virtual ~DataInterface() {}
     virtual QString getName() = 0;      //получение имени драйвера
-    virtual bool initialization(QAbstractItemModel * model) = 0;
-    virtual int createDevice(QString name) = 0;
+    virtual bool initialization(QAbstractItemModel * model) = 0;        //инициализация если необходимо
     virtual QString getLastError() = 0;
-    virtual bool getValues(int device, QMap<QString, float> *valuesList) = 0;
     virtual bool getValues(QList<PollClass *> * pollList) = 0;                    //Запрос данных от устройства
-    virtual QList<double> getValues(QList<QSqlRecord> *sgList) = 0;
     virtual bool getFieldsDB(QMap<QString, QString> *fieldsDB) = 0;         //Получение полей базы данных
     virtual QStringList* supportTypes() = 0;
     virtual int editDialog(int row) =0;
-    virtual int getDeviceField() = 0;
-    virtual int getTagField() = 0;
-    virtual QList<int> getPointsFields() = 0;
+    virtual QList<double> getPoints(QList<PollClass *> * pollList) = 0;     //Получение точек калибровки из списка
     virtual QList<double> getParametrValue(QSqlRecord record) = 0;
     virtual QString getTagAdress(QSqlRecord record) = 0;
     //virtual bool getValue(QString device) =0;

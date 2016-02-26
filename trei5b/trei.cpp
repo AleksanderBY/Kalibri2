@@ -35,6 +35,7 @@ bool Trei::initialization(QAbstractItemModel *model)
     return true;
 }
 
+//создание подключения к устройству
 int Trei::createDevice(QString desk)
 {
     //Проверяем наличие данного устройства в списке
@@ -79,40 +80,7 @@ QString Trei::getLastError()
     return lastError;
 }
 
-bool Trei::getValues(int device, QMap<QString, float> *valuesList)
-{
-    //Проверяем наличие устройства в списке
-    if (!socketList->contains(device)) {
-        lastError = "Неизвестное устройство";
-        return false;
-    }
-    //Создаем буферы для запроса и ответа
-    uchar *question_buf = new uchar[1024];
-    uchar *answer_buf = new uchar[1024];
-    //Подготавливаем список к отправке в контроллер
-    net_open_list(question_buf,1,0);
 
-    bool ok;
-    //Помещаем адреса в список
-    foreach (QString key, valuesList->keys()) {
-        quint16 adrr = key.toInt(&ok,16);
-        net_add_list(adrr);
-    }
-
-    net_close_list();
-    //отправляем запрос
-    net_tcp_request(device, question_buf, answer_buf);
-    //Проверяем статус ответа
-    net_status_list(answer_buf);
-    //извлекаем данные из ответа и помещаем в список
-    foreach (QString key, valuesList->keys()) {
-        float val;
-        net_get_list(&val);
-        valuesList->insert(key, val);
-    }
-
-    return true;
-}
 
 bool Trei::getValues(QList<PollClass *> *pollList)
 {
@@ -163,7 +131,6 @@ bool Trei::getValues(QList<PollClass *> *pollList)
                 if (pollList->at(i)->attr.contains("adress")) {
                     //Преобразуем адрес в десятичное число
                     quint16 adrr = pollList->at(i)->attr.value("adress").toInt(&ok,16);
-                    qDebug()<<adrr;
                     //Если преобразование успешно то добавляем в список
                     if (ok) net_add_list(adrr);
                     else {
@@ -198,22 +165,11 @@ bool Trei::getValues(QList<PollClass *> *pollList)
                 //qDebug()<<val;
             }
         }
-
+        //уничтожаем буферы
+        delete question_buf;
+        delete answer_buf;
     }
     return true;
-}
-
-QList<double> Trei::getValues(QList<QSqlRecord> *sgList)
-{
-    //Получаем имя устройства
-    QMap<QString, QString> devPoints;
-    QList<double> s;
-    for (int i=0; i<sgList->count(); i++)
-    {
-
-        qDebug()<<sgList->at(i).value(0).toString();
-    }
-    return s ;
 }
 
 bool Trei::getFieldsDB(QMap<QString, QString> *fieldsDB)
@@ -247,21 +203,18 @@ int Trei::editDialog(int row)
     return dlg.exec();
 }
 
-int Trei::getDeviceField()
+QList<double> Trei::getPoints(QList<PollClass *> *pollList)
 {
-    return 1;
-}
-
-int Trei::getTagField()
-{
-    return 10;
-}
-
-QList<int> Trei::getPointsFields()
-{
-    QList<int> points;
-    points<<11<<12<<13<<14;
-    return points;
+    QList<double> listPoint;
+    for (int i=0; i<pollList->count();i++) {
+        for (int j=1; j<=4; j++)
+        if (pollList->at(i)->attr.contains("point"+QString::number(j))) {
+            bool ok;
+            double point = pollList->at(i)->attr.value("point"+QString::number(j)).toDouble(&ok);
+            if (ok) listPoint<<point;
+        }
+    }
+    return listPoint;
 }
 
 QList<double> Trei::getParametrValue(QSqlRecord record)

@@ -114,6 +114,7 @@ private:
     QMap<QString, QString> * CPADrivers;//Список имеющихся в папке CPADrivers драйверов задатчиков
     QPluginLoader *CPAPluginLoader;     //Модуль загрузки плагина задатчика
     QActionGroup *CPAActionGroup;       //Группа пунктов меню для выбора задатчика
+    QThread * CPADriverThread;
     bool changeCPADriver(QString fileName);//Смена драйвера задатчика
 
     //----------------------Хранилище настроек-------------
