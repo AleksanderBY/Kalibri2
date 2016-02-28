@@ -205,13 +205,67 @@ int Trei::editDialog(int row)
 
 QList<double> Trei::getPoints(QList<PollClass *> *pollList)
 {
+    //Создаем список точек
     QList<double> listPoint;
     for (int i=0; i<pollList->count();i++) {
-        for (int j=1; j<=4; j++)
-        if (pollList->at(i)->attr.contains("point"+QString::number(j))) {
-            bool ok;
-            double point = pollList->at(i)->attr.value("point"+QString::number(j)).toDouble(&ok);
-            if (ok) listPoint<<point;
+        pollList->at(i)->points.clear();
+        //Проверяем наличие поля тип измерительного канала
+        if (!pollList->at(i)->attr.contains("type")) {
+            qDebug()<<"Отсутствует поле типа канала";
+            continue;
+        }
+        //Проверяем поддержку типа измерительного канала
+        if (!supportTypesList.contains(pollList->at(i)->attr.value("type"))) {
+            qDebug()<<"Тип измерительного канала не поддерживается";
+            continue;
+        }
+        QString mType = pollList->at(i)->attr.value("type");
+        //Проверяем наличие поля min
+        if (!pollList->at(i)->attr.contains("min")) {
+            qDebug()<<"Отсутствует поле min";
+            continue;
+        }
+        //Проверяем наличие поля max
+        if (!pollList->at(i)->attr.contains("max")) {
+            qDebug()<<"Отсутствует поле max";
+            continue;
+        }
+        //Проверяем правильность полей min, max
+        double PMin,PMax;
+        bool ok;
+        PMin = pollList->at(i)->attr.value("min").toDouble(&ok);
+        if (!ok) {
+            qDebug()<<"Неправильное поле min";
+            continue;
+        }
+        PMax = pollList->at(i)->attr.value("max").toDouble(&ok);
+        if (!ok) {
+            qDebug()<<"Неправильное поле max";
+            continue;
+        }
+        if (PMin>=PMax) {
+            qDebug()<<"Неверный диапазон";
+            continue;
+        }
+        double EMin, EMax;
+        if (mType== "M745A 0-5mA") {
+            EMin = 0; EMax = 5;
+        }
+
+        for (int j=1; j<=4; j++) {
+            //Проверяем наличие поля тип измерительного канала
+            if (!pollList->at(i)->attr.contains("point"+QString::number(j))) {
+                qDebug()<<"Точка:"+QString::number(j)+" отсутствует";
+                continue;
+            }
+            //Проверяем корректность поля точки канала
+            double PPoint = pollList->at(i)->attr.value("point"+QString::number(j)).toDouble(&ok);
+            if (!ok) {
+                qDebug()<<"Неправильное значение поля точки "+QString::number(j);
+                continue;
+            }
+            double EPoint = (EMax-EMin)*PPoint/(PMax-PMin)+EMin;
+            pollList->at(i)->points.push_back(EPoint);
         }
     }
     return listPoint;
