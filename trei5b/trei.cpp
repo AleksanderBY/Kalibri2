@@ -252,6 +252,10 @@ QList<double> Trei::getPoints(QList<PollClass *> *pollList)
             EMin = 0; EMax = 5;
         }
 
+        if (mType== "M745A 4-20mA") {
+            EMin = 4; EMax = 20;
+        }
+
         for (int j=1; j<=4; j++) {
             //Проверяем наличие поля тип измерительного канала
             if (!pollList->at(i)->attr.contains("point"+QString::number(j))) {
