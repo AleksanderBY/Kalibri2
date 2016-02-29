@@ -11,6 +11,12 @@ Trei::Trei()
     //this->supportTypesList = new QStringList();
     supportTypesList.append("M745A 4-20mA");
     supportTypesList.append("M745A 0-5mA");
+    supportTypesList.append("M732U 4-20mA");
+    supportTypesList.append("M732U 0-5mA");
+    supportTypesList.append("M732U +-78mV/L");
+    supportTypesList.append("M732U +-78mV/K");
+    supportTypesList.append("M745A +-78mV/L");
+    supportTypesList.append("M745A +-78mV/K");
     dlg.setSupportType(supportTypesList);
     dlg.setModal(true);
 
