@@ -95,6 +95,7 @@ public:
     int columnCount() {return column;}                                              //Возвращает число колонок в таблице
     AChannelCalibration * getChannel(int row) {return channelList.at(row);}
     QString getSetting(QString name) {return settings.value(name);}
+    void addSetting(QString key, QString value) {settings.insert(key, value);}
     void setCurrentChannel(QModelIndex index) {currentChannel=index.row();}
     int getCurrentChannel() {return currentChannel;}
     //----------------------------------------------------------------

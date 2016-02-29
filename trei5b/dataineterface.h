@@ -31,8 +31,8 @@ public:
     virtual QString getName() = 0;      //получение имени драйвера
     virtual bool initialization(QAbstractItemModel * model) = 0;        //инициализация если необходимо
     virtual QString getLastError() = 0;
-    virtual bool getValues(QList<PollClass *> * pollList) = 0;                    //Запрос данных от устройства
-    virtual bool getFieldsDB(QMap<QString, QString> *fieldsDB) = 0;         //Получение полей базы данных
+    virtual bool getValues(QList<PollClass *> * pollList) = 0;              //Запрос данных от устройства
+    virtual bool getFieldsDB(QVector<QString> *fieldsDB) = 0;         //Получение полей базы данных
     virtual QStringList* supportTypes() = 0;
     virtual int editDialog(int row) =0;
     virtual QList<double> getPoints(QList<PollClass *> * pollList) = 0;     //Получение точек калибровки из списка

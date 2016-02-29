@@ -20,7 +20,7 @@ public:
     bool initialization(QAbstractItemModel * model) Q_DECL_OVERRIDE;
     QString getLastError() Q_DECL_OVERRIDE;
     bool getValues(QList<PollClass *> *pollList) Q_DECL_OVERRIDE;
-    bool getFieldsDB(QMap<QString, QString> *fieldsDB) Q_DECL_OVERRIDE;             //Получение полей базы данных
+    bool getFieldsDB(QVector<QString> *fieldsDB) Q_DECL_OVERRIDE;             //Получение полей базы данных
     QStringList* supportTypes() Q_DECL_OVERRIDE;
     int editDialog(int row) Q_DECL_OVERRIDE;
     QList<double> getPoints(QList<PollClass *> * pollList) Q_DECL_OVERRIDE;

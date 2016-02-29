@@ -228,25 +228,40 @@ void MainWindow::settingDialog()
 //Создаем новую базу данных
 void MainWindow::createDB()
 {
-//    qDebug()<<"Создание базы данных";
-//    //Список драйверов опроса
-//    QStringList drvList;
-//    //заполняем список именами найденых драйверов
-//    foreach (QString key, this->connectDrivers->keys()) {
-//        drvList.append(connectDrivers->value(key));
-//    }
-//    //заполняем поля запроса диалога
-//    createDlg->setDefault(drvList);
-//    //вызываем диалог создания базы данных
-//    if (createDlg->exec()==QDialog::Accepted) {
-//        qDebug()<<"Нажата кнопка ОК. Создаем базу данных";
-//        //Проверяем наличие базы данных в каталоге баз
-//        QFile DBFile;
-//        DBFile.setFileName(createDlg->getNameDB()+".db3");
-//        if (DBFile.exists()) {
-//            qDebug()<<"База данных с таким именем уже существует";
-//            return;
+    qDebug()<<"Создание базы данных";
+    //Список драйверов опроса
+    QStringList drvList;
+    //заполняем список именами найденых драйверов
+    foreach (QString key, this->connectDrivers->keys()) {
+        drvList.append(connectDrivers->value(key));
+    }
+    //заполняем поля запроса диалога
+    createDlg->setDefault(drvList);
+    //вызываем диалог создания базы данных
+    if (createDlg->exec()==QDialog::Accepted) {
+        qDebug()<<"Нажата кнопка ОК. Создаем базу данных";
+        //Проверяем наличие базы данных в каталоге баз
+        QFile DBFile;
+        DBFile.setFileName(createDlg->getNameDB()+".xml");
+        if (DBFile.exists()) {
+            qDebug()<<"База данных с таким именем уже существует";
+            return;
+        }
+        //dom->clear();
+//        currentConnectDriver = this->connectDrivers->keys().at(createDlg->getIndexDriver());
+//        loadConnectPlugin(currentConnectDriver);
+        //dom->addSetting("driver", currentConnectDriver);
+        QVector<QString> *fieldsDB = new QVector<QString>;
+        connectDriver->getFieldsDB(fieldsDB);
+        //dom->addSetting("fieldscount", QString::number(fieldsDB.count()));
+//        int i=1;
+//        foreach (QString field, fieldsDB) {
+//            dom->addSetting("field"+QString::number(i), field);
+//            i++;
 //        }
+//        dom->save("");
+    }
+
 //        else {
 //            //создаем базу данных
 //            DBFile.open(QIODevice::WriteOnly);
@@ -346,15 +361,16 @@ void MainWindow::openDB()
         logger->log("Загрузка файла отменена");
         return;
     }
+    dom->clear();
     if (!dom->open(str)) {
         logger->log("Файл не был открыт", Qt::red);
         return;
     }
 
     //Получаем имя драйвера доступа к данным
-    QString driverFile = dom->getDriverFile();
+    currentConnectDriver = dom->getDriverFile();
     //Загружаем драйвер доступа к данным
-    loadConnectPlugin(driverFile);
+    loadConnectPlugin(currentConnectDriver);
 
     setStart(true);
 //    //qDebug()<<"Открытие базы данных";
@@ -435,6 +451,8 @@ bool MainWindow::loadConnectPlugin(QString fileName)
     //Проверяем дествительна ли ссылка
     QPluginLoader * di = qobject_cast<QPluginLoader *>(this->connectPluginLoader);
     if (di){
+        //Если драйвер уже загружен - выходим
+        if (this->connectPluginLoader->fileName()==fileName) return true;
         //выгружаем старый плагин
         this->connectPluginLoader->unload();
     }

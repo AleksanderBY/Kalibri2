@@ -86,6 +86,7 @@ private:
     QPluginLoader *connectPluginLoader; //Модуль загрузки плагина доступа к данным
     QMap<QString, QString> * connectDrivers;    //Список имеющихся в папке ConnectDrivers драйверов доступа к данным
     QMap<QString, float> * sgList;      //Буфер запроса
+    QString currentConnectDriver;       //Текущий драйвер опроса
     void findConnectPlugin();           //Поиск драйверов доступа к данным
     bool loadConnectPlugin(QString fileName); //Загрузка драйвера доступа к данным
 

@@ -30,16 +30,13 @@ int AXMLCalibrationModel::rowCount(const QModelIndex &parent) const
 {
     if (!dom->isDomValid()) return 0;
     //qDebug()<<dom->getChannel(dom->getCurrentChannel()).getResultsCount();
-    if (modelLevel==0)  return dom->channelCount();
-
-    else return dom->getChannel(dom->getCurrentChannel())->getResultsCount();
+    return dom->channelCount();
 }
 
 int AXMLCalibrationModel::columnCount(const QModelIndex &parent) const
 {
     if (!dom->isDomValid()) return 0;
-    if (modelLevel==0) return dom->columnCount();
-    else return 12;
+    return dom->getSetting("fieldscount").toInt();
 }
 
 QVariant AXMLCalibrationModel::data(const QModelIndex &index, int role) const
@@ -115,6 +112,8 @@ ADomCalibration::~ADomCalibration()
 {
     delete reader;
     delete writer;
+    qDeleteAll(this->channelList);
+    this->channelList.clear();
 }
 
 void ADomCalibration::setFileName(QString fileName)
@@ -160,7 +159,11 @@ bool ADomCalibration::open(QString fileName)
 
 void ADomCalibration::clear()
 {
+    qDeleteAll(this->channelList);
     this->channelList.clear();
+    this->settings.clear();
+    //this->currentChannel=-1;
+    this->column=0;
 }
 
 bool ADomCalibration::save(QString fileName)
@@ -452,6 +455,7 @@ AChannelCalibration::AChannelCalibration(QObject *parent)
 
 AChannelCalibration::~AChannelCalibration()
 {
+    qDeleteAll(this->resultList);
     this->resultList.clear();
     this->channelData.clear();
 }

@@ -178,23 +178,23 @@ bool Trei::getValues(QList<PollClass *> *pollList)
     return true;
 }
 
-bool Trei::getFieldsDB(QMap<QString, QString> *fieldsDB)
+bool Trei::getFieldsDB(QVector<QString> *fieldsDB)
 {
     fieldsDB->clear();
-    fieldsDB->insert("01_controller", "STRING(20)");
-    fieldsDB->insert("02_module", "STRING(20)");
-    fieldsDB->insert("03_pipe", "STRING(20)");
-    fieldsDB->insert("04_cipher", "STRING(20)");
-    fieldsDB->insert("05_name", "STRING(60)");
-    fieldsDB->insert("06_type", "STRING(20)");
-    fieldsDB->insert("07_min", "STRING(20)");
-    fieldsDB->insert("08_max", "STRING(20)");
-    fieldsDB->insert("09_unit", "STRING(20)");
-    fieldsDB->insert("10_adress", "STRING(20)");
-    fieldsDB->insert("11_point1", "STRING(20)");
-    fieldsDB->insert("12_point2", "STRING(20)");
-    fieldsDB->insert("13_point3", "STRING(20)");
-    fieldsDB->insert("14_point4", "STRING(20)");
+    fieldsDB->push_back("controller");
+    fieldsDB->push_back("module");
+    fieldsDB->push_back("pipe");
+    fieldsDB->push_back("cipher");
+    fieldsDB->push_back("name");
+    fieldsDB->push_back("type");
+    fieldsDB->push_back("min");
+    fieldsDB->push_back("max");
+    fieldsDB->push_back("unity");
+    fieldsDB->push_back("adress");
+    fieldsDB->push_back("point1");
+    fieldsDB->push_back("point2");
+    fieldsDB->push_back("point3");
+    fieldsDB->push_back("point4");
     return true;
 }
 
