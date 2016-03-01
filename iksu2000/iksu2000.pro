@@ -6,7 +6,7 @@
 
 QT       -= gui
 QT             += widgets serialport
-CONFIG     += plugin
+CONFIG     += plugin c++11
 TARGET = ../../general/debug/CPADrivers/iksu2000
 TEMPLATE = lib
 

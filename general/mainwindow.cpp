@@ -247,19 +247,18 @@ void MainWindow::createDB()
             qDebug()<<"База данных с таким именем уже существует";
             return;
         }
-        //dom->clear();
-//        currentConnectDriver = this->connectDrivers->keys().at(createDlg->getIndexDriver());
-//        loadConnectPlugin(currentConnectDriver);
-        //dom->addSetting("driver", currentConnectDriver);
+        dom->clear();
+        currentConnectDriver = this->connectDrivers->keys().at(createDlg->getIndexDriver());
+        loadConnectPlugin(currentConnectDriver);
+        dom->addSetting("driver", currentConnectDriver);
         QVector<QString> *fieldsDB = new QVector<QString>;
         connectDriver->getFieldsDB(fieldsDB);
-        //dom->addSetting("fieldscount", QString::number(fieldsDB.count()));
-//        int i=1;
-//        foreach (QString field, fieldsDB) {
-//            dom->addSetting("field"+QString::number(i), field);
-//            i++;
-//        }
-//        dom->save("");
+        dom->addSetting("fieldscount", QString::number(fieldsDB->count()));
+
+        for (int i=1; i<=fieldsDB->count(); i++) {
+            dom->addSetting("field"+QString::number(i), fieldsDB->at(i-1));
+        }
+        dom->save("");
     }
 
 //        else {
