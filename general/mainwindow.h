@@ -43,8 +43,9 @@ public slots:
     void createDB();
     void openDB();
     void setStart(bool start);
-    void sl_start_calibration();
-    void sl_set_next_point(double point);
+    void sl_set_next_point();                   //Слот установки следующей точки калибровки
+    void sl_read_values();                      //Слот чтения значений с контроллера
+    void sl_error_calibration(QString error);   //Слот обработки ошибок калибровки
 
 private slots:
     void on_pushButton_2_clicked();
@@ -53,7 +54,7 @@ private slots:
     void on_deleteButton_clicked();
     void on_cloneButton_clicked();
     void on_exitAction_triggered();
-    void timer_overflow();
+    void timer_overflow();                      //слот окончания выдержки времени при опросе
     void poll();
     void on_pushButton_clicked();
     void on_changeCPA(bool checked);
@@ -65,6 +66,10 @@ private slots:
 
 signals:
 
+    end_init();                                 //сигнал окончания инициализации калибровки
+    end_set_next_point();                       //сигнал окончания установки новой точки на задатчике
+    end_calibration_next_point();               //сигнал окончания калибровки точки
+    error_calibrations(QString error);                       //Сигнал ошибки калибровки
     startWork(bool start);
     set_next_point_complete(bool complete);
 
@@ -92,7 +97,6 @@ private:
 
     SettingsDialog *setting;
     createDialog * createDlg;
-    QTimer * timer;                     //Таймер интервала опроса
 
     //---------------Калибратор------------------------------
     Calibrator * myCalibrator;          //ссылка на класс калибратора
@@ -101,6 +105,11 @@ private:
     int step;                           //вариация опроса
     bool automaticSet;                  //Признак автоматического задания генерации на эталоне
 
+    //----------------Данные для калибровки
+    QList<PollClass*> * pollList;       //Список каналов выбранных для калибровки
+    QList<double> points;               //Список уникальных точек калибровки
+    int currentPoint;                   //Индекс текущей точки калибровки
+    QTimer * timer;                     //Таймер интервала опроса
 
     //------------- ADomCalicration------------------------
     ADomCalibration *dom;

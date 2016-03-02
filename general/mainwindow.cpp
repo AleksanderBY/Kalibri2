@@ -83,7 +83,8 @@ MainWindow::MainWindow(QWidget *parent) :
     CPAActionGroup->setExclusive(true);
     //Добавляем группу в меню
     this->ui->menu_3->addActions(CPAActionGroup->actions());
-
+    //Инициализируем список каналов выбранных для калибровки
+    pollList = new QList<PollClass*>;
 
 
     ui->tableView->verticalHeader()->setDefaultSectionSize(ui->tableView->verticalHeader()->minimumSectionSize());
@@ -155,17 +156,21 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connectPluginLoader = new QPluginLoader();
 
-    //Создаем поток для калибротора
-    calibratorThread = new QThread();
+//    //Создаем поток для калибротора
+//    calibratorThread = new QThread();
 
-    myCalibrator = new Calibrator();
-    myCalibrator->moveToThread(calibratorThread);
-    calibratorThread->start();
+//    myCalibrator = new Calibrator();
+//    myCalibrator->moveToThread(calibratorThread);
+//    calibratorThread->start();
 
     //Связываем сигналы калибратора с главным процессом
-    connect(myCalibrator, SIGNAL(start_calibration()), this, SLOT(sl_start_calibration()));
-    connect(myCalibrator, SIGNAL(set_next_point(double)), this, SLOT(sl_set_next_point(double)));
-    connect(this, SIGNAL(set_next_point_complete(bool)), myCalibrator, SLOT(on_set_next_point_complete(bool)));
+    connect(this, SIGNAL(end_init()),SLOT(sl_set_next_point()));
+    connect(this->timer, SIGNAL(timeout()), this, SLOT(sl_read_values()));
+    connect(this, SIGNAL(end_calibration_next_point()), SLOT(sl_set_next_point()));
+    connect(this, SIGNAL(error_calibrations(QString)), SLOT(sl_error_calibration(QString)));
+    //connect(myCalibrator, SIGNAL(start_calibration()), this, SLOT(sl_start_calibration()));
+    //connect(myCalibrator, SIGNAL(set_next_point(double)), this, SLOT(sl_set_next_point(double)));
+    //connect(this, SIGNAL(set_next_point_complete(bool)), myCalibrator, SLOT(on_set_next_point_complete(bool)));
 
 
 
@@ -412,6 +417,23 @@ void MainWindow::setStart(bool start)
         ui->calibrateView->setEnabled(start);
 }
 
+//Задание следующей точки калибровки
+void MainWindow::sl_set_next_point()
+{
+
+}
+
+//Считывание данных с контроллера
+void MainWindow::sl_read_values()
+{
+
+}
+//Обработка ошибок калибровки
+void MainWindow::sl_error_calibration(QString error)
+{
+
+}
+
 
 
 //Поиск драйверов доступа к данным
@@ -506,27 +528,18 @@ void MainWindow::poll()
     step++;
 }
 
-void MainWindow::sl_start_calibration()
-{
-     logger->log("Старт калибровки");
-}
 
-void MainWindow::sl_set_next_point(double point)
-{
-    logger->log("Установка значения на эталоне: " + QString::number(point));
-    QMessageBox * mBox = new QMessageBox("Задание новой точки", "Задайте на входе канала значение "+QString::number(point),QMessageBox::Information,
-                                         QMessageBox::Yes,
-                                         QMessageBox::No,
-                                         QMessageBox::Cancel | QMessageBox::Escape);
-    if (mBox->exec() == QMessageBox::Yes) emit set_next_point_complete(true); else emit set_next_point_complete(false);
-}
 
+//-------------------------------------------------------------------------------
+//------------------------Старт калибровки---------------------------------------
+//-------------------------------------------------------------------------------
 void MainWindow::on_pushButton_2_clicked()
 {
     //Определяем список индексов каналов калибровки
     QModelIndexList calibrateIDList = ui->tableView->selectionModel()->selectedRows();
-    //
-    QList<PollClass*> * pollList = new QList<PollClass*>;
+    //Очищаем список каналов от данных преведущей калибровки
+    // qDeleteAll(pollList);
+    pollList->clear();
     foreach (QModelIndex index, calibrateIDList) {
         PollClass * poll = new PollClass();
         QHash<QString, QString> attr = dom->getChannel(index.row())->getChannelData();
