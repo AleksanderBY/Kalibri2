@@ -17,7 +17,7 @@ void ALoggerModel::log(QString message, Qt::GlobalColor category)
     log.time = QTime::currentTime();
     log.message = message;
     log.category = category;
-    list->push_back(log);
+    list->push_front(log);
 //    QModelIndex index;
 //    index.=list->count()-1;
     emit dataChanged(index(list->count()-1), index(list->count()-1));

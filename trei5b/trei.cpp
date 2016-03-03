@@ -276,8 +276,12 @@ QList<double> Trei::getPoints(QList<PollClass *> *pollList)
             }
             double EPoint = (EMax-EMin)*PPoint/(PMax-PMin)+EMin;
             pollList->at(i)->points.push_back(EPoint);
+            listPoint.push_back(EPoint);
         }
     }
+    QSet<double> temp = listPoint.toSet();
+    listPoint = temp.toList();
+    qSort(listPoint.begin(), listPoint.end());
     return listPoint;
 }
 

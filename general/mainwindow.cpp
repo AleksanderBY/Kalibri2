@@ -43,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //Инициализируем список драйверов задатчиков
     CPADrivers = new QMap<QString, QString>;
     //Создаем поток для выполнения задатчика
-    CPADriverThread = new QThread(this);
+    //CPADriverThread = new QThread(this);
     //Заполняем список драйверов задатчиков
     foreach (QString fileName, CPADriverDir->entryList(filterList, QDir::Files))
     {
@@ -85,6 +85,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->menu_3->addActions(CPAActionGroup->actions());
     //Инициализируем список каналов выбранных для калибровки
     pollList = new QList<PollClass*>;
+    currentPollList = new QList<PollClass*>;
 
 
     ui->tableView->verticalHeader()->setDefaultSectionSize(ui->tableView->verticalHeader()->minimumSectionSize());
@@ -165,7 +166,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Связываем сигналы калибратора с главным процессом
     connect(this, SIGNAL(end_init()),SLOT(sl_set_next_point()));
-    connect(this->timer, SIGNAL(timeout()), this, SLOT(sl_read_values()));
+    connect(this->timer, SIGNAL(timeout()), this, SLOT(timer_overflow()));
     connect(this, SIGNAL(end_calibration_next_point()), SLOT(sl_set_next_point()));
     connect(this, SIGNAL(error_calibrations(QString)), SLOT(sl_error_calibration(QString)));
     //connect(myCalibrator, SIGNAL(start_calibration()), this, SLOT(sl_start_calibration()));
@@ -420,7 +421,38 @@ void MainWindow::setStart(bool start)
 //Задание следующей точки калибровки
 void MainWindow::sl_set_next_point()
 {
+    if (currentPoint>=points.count()) {
+        logger->log("Калибровка успешно завершена", Qt::green);
+        return;
+    }
+    //Формируем список подписчиков на точку
+    currentPollList->clear();
 
+    for (int i=0;i<pollList->count(); i++) {
+        for (int j=0; j<pollList->at(i)->points.count();j++)
+        {
+            if (points.at(currentPoint)==pollList->at(i)->points.at(j)) {
+                currentPollList->push_back(pollList->at(i));
+            }
+        }
+    }
+    qDebug()<<"Подписано: "+QString::number(currentPollList->count())+" каналов";
+
+    //Создаем поля для результатов калибровки в доме
+    calibrationChannel.clear();
+    for (int i=0; i<currentPollList->count();i++){
+        int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
+        calibrationChannel.insert(tempChannel, dom->getChannel(tempChannel));
+    }
+
+    this->logger->log("Устанавливаем на задатчике точку: "+QString::number(points.at(currentPoint)));
+    //Задаем точку
+    if (CPADriver->setValue(points.at(currentPoint), mA)) {
+        this->logger->log("Точка установлена");
+        this->measurement = 1;
+        this->timer->setInterval(1000);
+        this->timer->start();
+    }
 }
 
 //Считывание данных с контроллера
@@ -433,8 +465,6 @@ void MainWindow::sl_error_calibration(QString error)
 {
 
 }
-
-
 
 //Поиск драйверов доступа к данным
 void MainWindow::findConnectPlugin()
@@ -514,10 +544,7 @@ bool MainWindow::changeCPADriver(QString fileName)
         CPADriver = qobject_cast<CPAInterface * >(CPAPluginLoader->instance());
         connect(CPADriver, SIGNAL(log(QString,Qt::GlobalColor)), logger, SLOT(on_log(QString,Qt::GlobalColor)));
         CPADriver->initialization(settings);
-        qDebug()<<CPADriver->thread();
-        CPADriver->moveToThread(CPADriverThread);
         settings->setValue("kalibri2/currentCPADriver", fileName);
-        CPADriverThread->start();
         return true;
     }
     return false;
@@ -543,15 +570,18 @@ void MainWindow::on_pushButton_2_clicked()
     foreach (QModelIndex index, calibrateIDList) {
         PollClass * poll = new PollClass();
         QHash<QString, QString> attr = dom->getChannel(index.row())->getChannelData();
+        attr.insert("num", QString::number(index.row()));
         poll->attr = attr;
         pollList->push_back(poll);
      }
-    QList<double> pointList = this->connectDriver->getPoints(pollList);
-
-    for (int i=0; i<pointList.count(); i++)
-    {
-        qDebug()<<pointList.at(i);
+    points = this->connectDriver->getPoints(pollList);
+    if (points.count()<0) {
+        this->logger->log("Нет заданных точек для калибровки", Qt::yellow);
+        return;
     }
+    currentPoint=0;
+
+    emit this->end_init();
 
     //this->connectDriver->getValues(pollList);
     //for (int i=0; i<pollList->count();i++) {
@@ -612,54 +642,67 @@ void MainWindow::on_exitAction_triggered()
 
 void MainWindow::timer_overflow()
 {
-
+    if (measurement<=10) {
+        logger->log("Получаем значения №№"+QString::number(measurement));
+        if (connectDriver->getValues(currentPollList)) {
+            for (int i=0; i<currentPollList->count(); i++)
+                qDebug()<<currentPollList->at(i)->value;
+        }
+        measurement++;
+    }
+    else {
+        logger->log("Калибровка точки завершена");
+        this->timer->stop();
+        currentPoint++;
+        emit this->end_calibration_next_point();
+    }
 }
 
 void MainWindow::on_pushButton_clicked()
 {
-    measurement m;
-    switch (ui->spinBox->value()) {
-    case 0: m=mA;
-        break;
-    case 1: m=mV;
-        break;
-    case 2: m=V;
-        break;
-    case 3: m=Om;
-        break;
-    case 4: m=C100M1_426;
-        break;
-    case 5: m=C100M1_428;
-        break;
-    case 6: m=C50M1_426;
-        break;
-    case 7: m=C50M1_428;
-        break;
-    case 8: m=C50P;
-        break;
-    case 9: m=C100P;
-        break;
-    case 10: m=CPt100IEC385;
-        break;
-    case 11: m=CTypeJ;
-        break;
-    case 12: m=CTypeK;
-        break;
-    case 13: m=CTypeB;
-        break;
-    case 14: m=CTypeA1;
-        break;
-    case 15: m=CTypeS;
-        break;
-    case 16: m=CTypeXK;
-        break;
-    default:
-        m=mA;
-        break;
-    }
-    //CPADriver->setup();
-    qDebug()<<CPADriver->thread();
-    CPADriver->setValue(ui->doubleSpinBox->value(), m);
+//    measurement m;
+//    switch (ui->spinBox->value()) {
+//    case 0: m=mA;
+//        break;
+//    case 1: m=mV;
+//        break;
+//    case 2: m=V;
+//        break;
+//    case 3: m=Om;
+//        break;
+//    case 4: m=C100M1_426;
+//        break;
+//    case 5: m=C100M1_428;
+//        break;
+//    case 6: m=C50M1_426;
+//        break;
+//    case 7: m=C50M1_428;
+//        break;
+//    case 8: m=C50P;
+//        break;
+//    case 9: m=C100P;
+//        break;
+//    case 10: m=CPt100IEC385;
+//        break;
+//    case 11: m=CTypeJ;
+//        break;
+//    case 12: m=CTypeK;
+//        break;
+//    case 13: m=CTypeB;
+//        break;
+//    case 14: m=CTypeA1;
+//        break;
+//    case 15: m=CTypeS;
+//        break;
+//    case 16: m=CTypeXK;
+//        break;
+//    default:
+//        m=mA;
+//        break;
+//    }
+//    //CPADriver->setup();
+//    qDebug()<<CPADriver->thread();
+//    CPADriver->setValue(ui->doubleSpinBox->value(), m);
 
 
 }

@@ -100,16 +100,19 @@ private:
 
     //---------------Калибратор------------------------------
     Calibrator * myCalibrator;          //ссылка на класс калибратора
-    QThread * calibratorThread;         //Поток для калибратора
+    //QThread * calibratorThread;         //Поток для калибратора
 
     int step;                           //вариация опроса
     bool automaticSet;                  //Признак автоматического задания генерации на эталоне
 
     //----------------Данные для калибровки
     QList<PollClass*> * pollList;       //Список каналов выбранных для калибровки
+    QList<PollClass*> * currentPollList;    //Список каналов для калибровки текущей точки
     QList<double> points;               //Список уникальных точек калибровки
     int currentPoint;                   //Индекс текущей точки калибровки
     QTimer * timer;                     //Таймер интервала опроса
+    int measurement;                    //Номер измерения в калибровке
+    QMap<int, AChannelCalibration*> calibrationChannel;
 
     //------------- ADomCalicration------------------------
     ADomCalibration *dom;
@@ -124,7 +127,7 @@ private:
     QMap<QString, QString> * CPADrivers;//Список имеющихся в папке CPADrivers драйверов задатчиков
     QPluginLoader *CPAPluginLoader;     //Модуль загрузки плагина задатчика
     QActionGroup *CPAActionGroup;       //Группа пунктов меню для выбора задатчика
-    QThread * CPADriverThread;
+    //QThread * CPADriverThread;
     bool changeCPADriver(QString fileName);//Смена драйвера задатчика
 
     //----------------------Хранилище настроек-------------
