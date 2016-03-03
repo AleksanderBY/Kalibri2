@@ -464,7 +464,11 @@ AChannelCalibration::~AChannelCalibration()
 
 bool AXMLCalibrationModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    //if (role == Qt::DisplayRole || role == Qt::EditRole) dom->getChannel(index.row())->setAttribute(index.column(), value.toString());
+    if (role == Qt::DisplayRole || role == Qt::EditRole)
+    {
+       dom->getChannel(index.row())->addChannelData(dom->getSetting("field"+QString::number(index.column())), value.toString());
+    }
+        //dom->getChannel(index.row())->setAttribute(index.column(), value.toString());
     return true;
 }
 
