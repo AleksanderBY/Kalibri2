@@ -35,7 +35,8 @@ public:
     QHash<QString, QString> getCalculations() const;
     QString getCalculation(QString key) {return calculations.value(key);}
     //-----------Измерительные приборы----------
-    QHash<QString, AMeasuringDevice> getDevices() const;
+    QVector<AMeasuringDevice> getDevices() const;
+    void addDevice(AMeasuringDevice device) { devices.push_back(device); }
     //------------Прочие параметры--------------
     void addOther(QString key, QString value) {others.insert(key, value) ;}
     QHash<QString, QString> getOthers() const;
@@ -45,7 +46,7 @@ private:
     QHash<QString, QString> results;
     QHash<QString, QString> conditions;
     QHash<QString, QString> calculations;
-    QHash<QString, AMeasuringDevice> devices;
+    QVector<AMeasuringDevice> devices;
     QHash<QString, QString> others;
 };
 

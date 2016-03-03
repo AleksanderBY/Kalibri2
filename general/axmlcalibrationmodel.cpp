@@ -180,6 +180,7 @@ bool ADomCalibration::save(QString fileName)
     //QXmlStreamAttribute attr;
     QHash<QString, QString>::iterator iter;
     QHash<QString, QString> map = this->getSettings();
+    QVector<AMeasuringDevice> devices;
     for (iter = map.begin(); iter != map.end(); ++iter){
         writer->writeAttribute(iter.key(),iter.value());
     }
@@ -211,6 +212,17 @@ bool ADomCalibration::save(QString fileName)
             writer->writeEndElement();
 
             writer->writeStartElement("devices");
+
+            devices=this->getChannel(i)->getResult(j)->getDevices();
+            for (int k=0; k<devices.count();k++) {
+                writer->writeStartElement("device");
+                map = devices.at(k).getParam();
+                for (iter = map.begin(); iter != map.end(); ++iter){
+                    writer->writeAttribute(iter.key(),iter.value());
+                }
+                writer->writeEndElement();
+            }
+
             writer->writeEndElement();
 
 
@@ -252,6 +264,8 @@ bool ADomCalibration::parsing()
             if (reader->name()=="results1"||reader->name() == "results2"||reader->name() == "results3"||reader->name() == "results4") tag=2;
             if (reader->name()=="event_time") tag=3;
             if (reader->name()=="conditions") tag=4;
+            if (reader->name()=="generalSI") tag=6;
+            if (reader->name()=="secondarySI") tag=7;
             if (reader->name()=="SI") tag=5;
 
             //Получаем атрибуты стартового элемента
@@ -394,16 +408,43 @@ bool ADomCalibration::parsing()
                     }
                 }
                 break;}
-            case 5:
-                break;
-            default:{
-                return false;
-                break;
-            }
+            case 5:{
+                AChannelCalibration * channel = getChannel(channelCount()-1);
+                temp = reader->attributes();
+                //Временно для старого формата файлов
+                AResultCalibration * result;
+                for (int i=0; i<channel->getResultsCount();i++)
+                {
+                    result=channel->getResult(i);
+                    AMeasuringDevice MDevice;
+                    foreach (QXmlStreamAttribute attr, temp) {
+                        qDebug()<<attr.name().toString();
+                        QString key;
+                        if (attr.name().toString()=="Tip") key="Type";
+                        if (attr.name().toString()=="NZ") key="SN";
+                        if (attr.name().toString()=="NP") key="SKN";
+                        if (attr.name().toString()=="DO") key="SROK";
+                        MDevice.addParam(key, attr.value().toString());
+                    }
+                    if (lastTag==6) {
+                        MDevice.addParam("role", "general");
+                    }
+                    if (lastTag==7) {
+                        MDevice.addParam("role", "secondary");
+                    }
+                    result->addDevice(MDevice);
+                }
+
 
             }
+                break;
+//            default:{
+//                return false;
+//                break;
+//            }
 
-
+            }
+            if (lastTag!=5&&(tag==6||tag==7)) lastTag=tag;
 
 
 
@@ -643,10 +684,12 @@ QHash<QString, QString> AResultCalibration::getCalculations() const
 {
     return calculations;
 }
-QHash<QString, AMeasuringDevice> AResultCalibration::getDevices() const
+
+QVector<AMeasuringDevice> AResultCalibration::getDevices() const
 {
     return devices;
 }
+
 QHash<QString, QString> AResultCalibration::getOthers() const
 {
     return others;
@@ -654,7 +697,8 @@ QHash<QString, QString> AResultCalibration::getOthers() const
 
 void AMeasuringDevice::addParam(QString key, QString value)
 {
-    if (key=="Type"||key=="SN"||key=="SKN"||key=="SROK"||key=="role") this->param.insert(key, value);
+    if (key=="Type"||key=="SN"||key=="SKN"||key=="SROK"||key=="role")
+        this->param.insert(key, value);
 }
 
 QHash<QString, QString> AMeasuringDevice::getParam() const
