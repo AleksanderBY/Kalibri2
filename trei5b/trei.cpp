@@ -195,6 +195,9 @@ bool Trei::getFieldsDB(QVector<QString> *fieldsDB)
     fieldsDB->push_back("point2");
     fieldsDB->push_back("point3");
     fieldsDB->push_back("point4");
+    fieldsDB->push_back("TK");
+    fieldsDB->push_back("deltaP");
+    fieldsDB->push_back("note");
     return true;
 }
 

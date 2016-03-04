@@ -113,6 +113,7 @@ private:
     QTimer * timer;                     //Таймер интервала опроса
     int measurement;                    //Номер измерения в калибровке
     QMap<int, AChannelCalibration*> calibrationChannel;
+    QMap<int, AResultCalibration*> resultCalibrationList;
 
     //------------- ADomCalicration------------------------
     ADomCalibration *dom;

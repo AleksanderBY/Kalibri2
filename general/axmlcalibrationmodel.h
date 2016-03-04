@@ -198,6 +198,10 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     //bool removeRows(int row, int count, const QModelIndex &parent);
+
+    // QAbstractItemModel interface
+public:
+    bool insertRows(int row, int count, const QModelIndex &parent);
 };
 
 #endif // AXMLCALIBRATIONMODEL_H

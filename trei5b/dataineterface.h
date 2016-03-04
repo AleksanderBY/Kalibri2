@@ -30,11 +30,11 @@ public:
     virtual ~DataInterface() {}
     virtual QString getName() = 0;      //получение имени драйвера
     virtual bool initialization(QAbstractItemModel * model) = 0;        //инициализация если необходимо
-    virtual QString getLastError() = 0;
+    virtual QString getLastError() = 0;                                 //Получение последней ошибки
     virtual bool getValues(QList<PollClass *> * pollList) = 0;              //Запрос данных от устройства
     virtual bool getFieldsDB(QVector<QString> *fieldsDB) = 0;         //Получение полей базы данных
-    virtual QStringList* supportTypes() = 0;
-    virtual int editDialog(int row) =0;
+    virtual QStringList* supportTypes() = 0;                            //Поддерживаемые типы каналов
+    virtual int editDialog(int row) =0;                                 //Диалог редактирования данных о канале
     virtual QList<double> getPoints(QList<PollClass *> * pollList) = 0;     //Получение точек калибровки из списка
     virtual QList<double> getParametrValue(QSqlRecord record) = 0;
     virtual QString getTagAdress(QSqlRecord record) = 0;

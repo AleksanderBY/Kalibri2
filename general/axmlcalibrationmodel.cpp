@@ -169,7 +169,7 @@ void ADomCalibration::clear()
 bool ADomCalibration::save(QString fileName)
 {
     QFile file;
-    file.setFileName("test.xml");
+    file.setFileName(fileName);
     if (!file.open(QIODevice::WriteOnly|QIODevice::Text)){
         return false;
     }
@@ -345,7 +345,7 @@ bool ADomCalibration::parsing()
                 if (temp.count()>0)
                     foreach (QXmlStreamAttribute attr, temp) {
                         //qDebug()<<attr.name().toString();
-                        result->addResult(attr.name().toString(), attr.value().toString());
+                        result->addResult(attr.name().toString(), attr.value().toString().replace(',','.'));
                     }
                 //Добавляем точку калибровки если её нет
                 if (!result->getOthers().contains("point")) result->addOther("point", channel->getChannelData().value("point"+QString::number(channel->getResultsCount()+1)));
@@ -375,7 +375,7 @@ bool ADomCalibration::parsing()
                     double av = result->getCalculation("av").toDouble();
                     double summa = 0;
                     for (int i=1; i<=10; i++) {
-                        summa += pow(result->getRes("V"+QString::number(i)).toDouble()-av, 2);
+                        summa = summa + pow(av-result->getRes("V"+QString::number(i)).toDouble(), 2);
                     }
                     summa = summa/90;
                     summa = sqrt(summa);
@@ -425,7 +425,6 @@ bool ADomCalibration::parsing()
                     result=channel->getResult(i);
                     AMeasuringDevice MDevice;
                     foreach (QXmlStreamAttribute attr, temp) {
-                        qDebug()<<attr.name().toString();
                         QString key;
                         if (attr.name().toString()=="Tip") key="Type";
                         if (attr.name().toString()=="NZ") key="SN";
@@ -718,3 +717,12 @@ void AMeasuringDevice::setParam(const QHash<QString, QString> &value)
 }
 
 
+
+
+bool AXMLCalibrationResultModel::insertRows(int row, int count, const QModelIndex &parent)
+{
+    emit this->beginInsertRows(parent,row, row+count-1);
+
+    emit this->endInsertRows();
+    return true;
+}

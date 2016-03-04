@@ -427,7 +427,6 @@ void MainWindow::sl_set_next_point()
     }
     //Формируем список подписчиков на точку
     currentPollList->clear();
-
     for (int i=0;i<pollList->count(); i++) {
         for (int j=0; j<pollList->at(i)->points.count();j++)
         {
@@ -440,9 +439,25 @@ void MainWindow::sl_set_next_point()
 
     //Создаем поля для результатов калибровки в доме
     calibrationChannel.clear();
+    resultCalibrationList.clear();
     for (int i=0; i<currentPollList->count();i++){
         int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
+
         calibrationChannel.insert(tempChannel, dom->getChannel(tempChannel));
+
+        AResultCalibration *result = new AResultCalibration();
+
+        //result->addOther("point", QString::number(currentPollList->at(i)->points.at(i)));
+
+        QDateTime dt = QDateTime::currentDateTime();
+
+        result->addOther("date", dt.date().toString("dd.MM.yyyy"));
+        result->addOther("time", dt.time().toString());
+
+        dom->getChannel(tempChannel)->addResultCalibration(result);
+
+        resultCalibrationList.insert(tempChannel, result);
+        XMLResultsModel->insertRow(dom->getChannel(dom->getCurrentChannel())->getResultsCount());
     }
 
     this->logger->log("Устанавливаем на задатчике точку: "+QString::number(points.at(currentPoint)));
@@ -643,15 +658,31 @@ void MainWindow::on_exitAction_triggered()
 void MainWindow::timer_overflow()
 {
     if (measurement<=10) {
-        logger->log("Получаем значения №№"+QString::number(measurement));
+        logger->log("Получаем значения №"+QString::number(measurement));
+
         if (connectDriver->getValues(currentPollList)) {
-            for (int i=0; i<currentPollList->count(); i++)
+            for (int i=0; i<currentPollList->count(); i++) {
+                int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
+                resultCalibrationList.value(tempChannel)->addResult("V"+QString::number(measurement), QString::number(currentPollList->at(i)->value));
                 qDebug()<<currentPollList->at(i)->value;
+            }
+
         }
         measurement++;
     }
     else {
         logger->log("Калибровка точки завершена");
+        for (int i=0; i<resultCalibrationList.count();i++) {
+            int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
+            AResultCalibration *result = resultCalibrationList.value(tempChannel);
+            double summa = 0;
+            for (int j=1; j<=10; j++) {
+                summa = summa+result->getRes("V"+QString::number(j)).toDouble();
+            }
+            double av = summa/10;
+            result->addCalulation("av", QString::number(av, 'g', 12));
+        }
+
         this->timer->stop();
         currentPoint++;
         emit this->end_calibration_next_point();
@@ -733,5 +764,6 @@ void MainWindow::on_environmentAction_triggered()
 
 void MainWindow::on_saveAction_triggered()
 {
-    this->dom->save("sdf");
+    QString fileName = QFileDialog::getSaveFileName();
+    this->dom->save(fileName);
 }

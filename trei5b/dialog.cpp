@@ -66,6 +66,9 @@ void Dialog::setModel(QAbstractItemModel *model)
     dwm->addMapping(ui->point2, 11);
     dwm->addMapping(ui->point3, 12);
     dwm->addMapping(ui->point4, 13);
+    dwm->addMapping(ui->TK, 14);
+    dwm->addMapping(ui->deltaP, 15);
+    dwm->addMapping(ui->note, 16);
     dwm->setCurrentIndex(0);
 }
 
