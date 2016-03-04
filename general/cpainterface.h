@@ -13,6 +13,10 @@ public:
     virtual ~CPAInterface() {}
     virtual void initialization(QSettings *settings) = 0;
     virtual QString getName() = 0;
+    virtual QString getType() = 0;
+    virtual QString getSN() = 0;
+    virtual QString getSKN() = 0;
+    virtual QString getSROK() = 0;
     virtual int showInfo() = 0;
     virtual void test() = 0;
     virtual bool setValue(float value, measurement type_value) = 0; //запрос на установление значения

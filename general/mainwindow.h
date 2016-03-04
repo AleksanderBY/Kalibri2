@@ -21,6 +21,7 @@
 #include "axmlcalibrationmodel.h"
 #include "aloggermodel.h"
 #include "cpainterface.h"
+#include "environmentdialog.h"
 
 #include "../trei5b/dataineterface.h"
 
@@ -133,6 +134,8 @@ private:
 
     //----------------------Хранилище настроек-------------
     QSettings * settings;
+    //----------------------Условия калибровки---------------
+    EnvironmentDialog * ed;
 };
 
 

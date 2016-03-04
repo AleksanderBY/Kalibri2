@@ -22,6 +22,10 @@ public:
     void test() Q_DECL_OVERRIDE;
     bool setValue(float value, measurement type_value) Q_DECL_OVERRIDE;
     bool setup() Q_DECL_OVERRIDE;
+    QString getType() Q_DECL_OVERRIDE;
+    QString getSN() Q_DECL_OVERRIDE;
+    QString getSKN() Q_DECL_OVERRIDE;
+    QString getSROK() Q_DECL_OVERRIDE;
 
 signals:
     void set_value_ok();

@@ -19,7 +19,7 @@ class PollClass
 {
 public:
     double value;
-    QList<double> points;
+    QHash<QString,double> points;
     QHash<QString,QString> attr;
 };
 

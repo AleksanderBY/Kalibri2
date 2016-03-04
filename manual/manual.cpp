@@ -65,3 +65,23 @@ bool ManualPlugin::setup()
     }
 }
 
+QString ManualPlugin::getType()
+{
+    return TypeDevice;
+}
+
+QString ManualPlugin::getSN()
+{
+    return ZN;
+}
+
+QString ManualPlugin::getSKN()
+{
+    return SKN;
+}
+
+QString ManualPlugin::getSROK()
+{
+    return SROK.toString("dd.MM.yyyy");
+}
+

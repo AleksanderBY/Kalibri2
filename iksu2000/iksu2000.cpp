@@ -477,5 +477,23 @@ void Iksu2000Plugin::on_close()
     emit this->log("Закрытие порта");
 }
 
+QString Iksu2000Plugin::getType()
+{
+    return "ИКСУ-2000";
+}
 
+QString Iksu2000Plugin::getSN()
+{
+    return ZN;
+}
+
+QString Iksu2000Plugin::getSKN()
+{
+    return SKN;
+}
+
+QString Iksu2000Plugin::getSROK()
+{
+    return SROK.toString("dd.MM.yyyy");
+}
 

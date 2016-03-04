@@ -9,6 +9,7 @@
 #include <QPair>
 #include <QTime>
 #include "environmentdialog.h"
+#include <math.h>
 
 
 
@@ -172,8 +173,9 @@ MainWindow::MainWindow(QWidget *parent) :
     //connect(myCalibrator, SIGNAL(start_calibration()), this, SLOT(sl_start_calibration()));
     //connect(myCalibrator, SIGNAL(set_next_point(double)), this, SLOT(sl_set_next_point(double)));
     //connect(this, SIGNAL(set_next_point_complete(bool)), myCalibrator, SLOT(on_set_next_point_complete(bool)));
-
-
+    //Создаем диалог условий калибровки
+    this->ed = new EnvironmentDialog(this->settings);
+    ed->setModal(true);
 
 //    qDebug()<<"Создание основного окна";
 }
@@ -418,57 +420,7 @@ void MainWindow::setStart(bool start)
         ui->calibrateView->setEnabled(start);
 }
 
-//Задание следующей точки калибровки
-void MainWindow::sl_set_next_point()
-{
-    if (currentPoint>=points.count()) {
-        logger->log("Калибровка успешно завершена", Qt::green);
-        return;
-    }
-    //Формируем список подписчиков на точку
-    currentPollList->clear();
-    for (int i=0;i<pollList->count(); i++) {
-        for (int j=0; j<pollList->at(i)->points.count();j++)
-        {
-            if (points.at(currentPoint)==pollList->at(i)->points.at(j)) {
-                currentPollList->push_back(pollList->at(i));
-            }
-        }
-    }
-    qDebug()<<"Подписано: "+QString::number(currentPollList->count())+" каналов";
 
-    //Создаем поля для результатов калибровки в доме
-    calibrationChannel.clear();
-    resultCalibrationList.clear();
-    for (int i=0; i<currentPollList->count();i++){
-        int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
-
-        calibrationChannel.insert(tempChannel, dom->getChannel(tempChannel));
-
-        AResultCalibration *result = new AResultCalibration();
-
-        //result->addOther("point", QString::number(currentPollList->at(i)->points.at(i)));
-
-        QDateTime dt = QDateTime::currentDateTime();
-
-        result->addOther("date", dt.date().toString("dd.MM.yyyy"));
-        result->addOther("time", dt.time().toString());
-
-        dom->getChannel(tempChannel)->addResultCalibration(result);
-
-        resultCalibrationList.insert(tempChannel, result);
-        XMLResultsModel->insertRow(dom->getChannel(dom->getCurrentChannel())->getResultsCount());
-    }
-
-    this->logger->log("Устанавливаем на задатчике точку: "+QString::number(points.at(currentPoint)));
-    //Задаем точку
-    if (CPADriver->setValue(points.at(currentPoint), mA)) {
-        this->logger->log("Точка установлена");
-        this->measurement = 1;
-        this->timer->setInterval(1000);
-        this->timer->start();
-    }
-}
 
 //Считывание данных с контроллера
 void MainWindow::sl_read_values()
@@ -597,31 +549,166 @@ void MainWindow::on_pushButton_2_clicked()
     currentPoint=0;
 
     emit this->end_init();
-
-    //this->connectDriver->getValues(pollList);
-    //for (int i=0; i<pollList->count();i++) {
-//        qDebug()<<QString::number(pollList->at(i)->value, 'g' ,12);
-//    }
-
-//    AChannelCalibration * channel;
-//    QList<QHash<QString, QString> > * list = new  QList<QHash<QString, QString> >;
-//    foreach (QModelIndex index, calibrateIDList) {
-//        channel = dom->getChannel(index.row());
-//        list->push_back(channel->getChannelData());
-//    }
-//    qDebug()<<list->count();
-//    //выходим если нет выбранных каналов
-//    if (calibrateIDList.count()<0) return;
-//    //Очищаем и заполняем поля калибратора новыми каналами
-//    myCalibrator->clearCalibrationRecordList();
-//    for (int i=0; i<calibrateIDList.count(); i++)
-//    {
-//        myCalibrator->addCalibrationRecord(sgModel->record(calibrateIDList.at(i).row()));
-//    }
-//    //Стартуем калибратор
-//    myCalibrator->start(connectDriver);
-
 }
+
+//Задание следующей точки калибровки
+void MainWindow::sl_set_next_point()
+{
+    if (currentPoint>=points.count()) {
+        logger->log("Калибровка успешно завершена", Qt::green);
+        return;
+    }
+    //Формируем список подписчиков на точку
+    currentPollList->clear();
+    for (int i=0;i<pollList->count(); i++) {
+        foreach (QString key, pollList->at(i)->points.keys()) {
+            if (points.at(currentPoint)==pollList->at(i)->points.value(key)) {
+                currentPollList->push_back(pollList->at(i));
+            }
+
+        }
+    }
+    qDebug()<<"Подписано: "+QString::number(currentPollList->count())+" каналов";
+
+    //Создаем поля для результатов калибровки в доме
+    calibrationChannel.clear();
+    resultCalibrationList.clear();
+    for (int i=0; i<currentPollList->count();i++){
+        int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
+
+        calibrationChannel.insert(tempChannel, dom->getChannel(tempChannel));
+
+        AResultCalibration *result = new AResultCalibration();
+
+        //result->addOther("point", QString::number(currentPollList->at(i)->points.at(i)));
+        foreach (QString key, currentPollList->at(i)->points.keys()) {
+            if (points.at(currentPoint)==currentPollList->at(i)->points.value(key)) {
+                result->addOther("point", key);
+                break;
+            }
+        }
+
+        QDateTime dt = QDateTime::currentDateTime();
+
+        result->addOther("date", dt.date().toString("dd.MM.yyyy"));
+        result->addOther("time", dt.time().toString());
+
+        dom->getChannel(tempChannel)->addResultCalibration(result);
+
+        resultCalibrationList.insert(tempChannel, result);
+        XMLResultsModel->insertRow(dom->getChannel(dom->getCurrentChannel())->getResultsCount());
+    }
+
+    this->logger->log("Устанавливаем на задатчике точку: "+QString::number(points.at(currentPoint)));
+    //Задаем точку
+    if (CPADriver->setValue(points.at(currentPoint), mA)) {
+        this->logger->log("Точка установлена");
+        this->measurement = 1;
+        this->timer->setInterval(1000);
+        this->timer->start();
+    }
+}
+
+void MainWindow::timer_overflow()
+{
+    if (measurement<=10) {
+        logger->log("Получаем значения №"+QString::number(measurement));
+        if (connectDriver->getValues(currentPollList)) {
+            for (int i=0; i<currentPollList->count(); i++) {
+                int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
+                resultCalibrationList.value(tempChannel)->addResult("V"+QString::number(measurement), QString::number(currentPollList->at(i)->value));
+                qDebug()<<currentPollList->at(i)->value;
+            }
+
+        }
+        measurement++;
+    }
+    else {
+        logger->log("Калибровка точки завершена");
+        this->timer->stop();
+        //Оформляем расчетные данные и др. параметры
+        for (int i=0; i<resultCalibrationList.count();i++) {
+            int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
+            AResultCalibration *result = resultCalibrationList.value(tempChannel);
+            //Расчитываем среднее значение
+            double summa = 0;
+            for (int j=1; j<=10; j++) {
+                summa = summa+result->getRes("V"+QString::number(j)).toDouble();
+            }
+            double av = summa/10;
+            result->addCalulation("av", QString::number(av, 'g', 12));
+            //Расчитываем отклонение среднего значения
+            double point = result->getOther("point").toDouble();
+            double delta = point - av;
+            //qDebug()<<delta;
+            result->addCalulation("delta", QString::number(delta, 'g', 12));
+            //Расчитываем стандартную неопределенность измерения по типу А
+            summa = 0;
+            for (int i=1; i<=10; i++) {
+                summa = summa + pow(av-result->getRes("V"+QString::number(i)).toDouble(), 2);
+            }
+            summa = summa/90;
+            summa = sqrt(summa);
+            result->addCalulation("neoprIzm", QString::number(summa, 'g', 12));
+            //Добавляем условия калибровки
+            result->addCondition("temperature", this->ed->getTemperature());
+            result->addCondition("pressure", this->ed->getPressure());
+            result->addCondition("humidity", this->ed->getHumidity());
+            result->addCondition("voltage", this->ed->getVoltage());
+            //Добавляем средства измерения
+            AMeasuringDevice device;
+            device.addParam("Type", CPADriver->getType());
+            device.addParam("SN", CPADriver->getSN());
+            device.addParam("SKN", CPADriver->getSKN());
+            device.addParam("SROK", CPADriver->getSROK());
+            device.addParam("role", "general");
+            result->addDevice(device);
+
+            AMeasuringDevice device1;
+            device1.addParam("Type", ed->getTemperatureDeviceType());
+            device1.addParam("SN", ed->getTemperatureDeviceZN());
+            device1.addParam("SKN", ed->getTemperatureDeviceSKN());
+            device1.addParam("SROK", ed->getTemperatureDeviceSROK().toString("dd.MM.yyyy"));
+            device1.addParam("role", "secondary");
+            result->addDevice(device1);
+            AMeasuringDevice device2;
+            device2.addParam("Type", ed->getHumidityDeviceType());
+            device2.addParam("SN", ed->getHumidityDeviceZN());
+            device2.addParam("SKN", ed->getHumidityDeviceSKN());
+            device2.addParam("SROK", ed->getHumidityDeviceSROK().toString("dd.MM.yyyy"));
+            device2.addParam("role", "secondary");
+            result->addDevice(device2);
+            AMeasuringDevice device3;
+            device3.addParam("Type", ed->getPressureDeviceType());
+            device3.addParam("SN", ed->getPressureDeviceZN());
+            device3.addParam("SKN", ed->getPressureDeviceSKN());
+            device3.addParam("SROK", ed->getPressureDeviceSROK().toString("dd.MM.yyyy"));
+            device3.addParam("role", "secondary");
+            result->addDevice(device3);
+            AMeasuringDevice device4;
+            device4.addParam("Type", ed->getPressureDeviceType());
+            device4.addParam("SN", ed->getPressureDeviceZN());
+            device4.addParam("SKN", ed->getPressureDeviceSKN());
+            device4.addParam("SROK", ed->getPressureDeviceSROK().toString("dd.MM.yyyy"));
+            device4.addParam("role", "secondary");
+            result->addDevice(device4);
+            AMeasuringDevice device5;
+            device5.addParam("Type", ed->getVoltageDeviceType());
+            device5.addParam("SN", ed->getVoltageDeviceZN());
+            device5.addParam("SKN", ed->getVoltageDeviceSKN());
+            device5.addParam("SROK", ed->getVoltageDeviceSROK().toString("dd.MM.yyyy"));
+            device5.addParam("role", "secondary");
+            result->addDevice(device5);
+        }
+
+
+
+
+        currentPoint++;
+        emit this->end_calibration_next_point();
+    }
+}
+
 
 void MainWindow::on_tableView_doubleClicked(const QModelIndex &index)
 {
@@ -655,39 +742,6 @@ void MainWindow::on_exitAction_triggered()
     close();
 }
 
-void MainWindow::timer_overflow()
-{
-    if (measurement<=10) {
-        logger->log("Получаем значения №"+QString::number(measurement));
-
-        if (connectDriver->getValues(currentPollList)) {
-            for (int i=0; i<currentPollList->count(); i++) {
-                int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
-                resultCalibrationList.value(tempChannel)->addResult("V"+QString::number(measurement), QString::number(currentPollList->at(i)->value));
-                qDebug()<<currentPollList->at(i)->value;
-            }
-
-        }
-        measurement++;
-    }
-    else {
-        logger->log("Калибровка точки завершена");
-        for (int i=0; i<resultCalibrationList.count();i++) {
-            int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
-            AResultCalibration *result = resultCalibrationList.value(tempChannel);
-            double summa = 0;
-            for (int j=1; j<=10; j++) {
-                summa = summa+result->getRes("V"+QString::number(j)).toDouble();
-            }
-            double av = summa/10;
-            result->addCalulation("av", QString::number(av, 'g', 12));
-        }
-
-        this->timer->stop();
-        currentPoint++;
-        emit this->end_calibration_next_point();
-    }
-}
 
 void MainWindow::on_pushButton_clicked()
 {
@@ -756,10 +810,8 @@ void MainWindow::on_action_triggered()
 }
 
 void MainWindow::on_environmentAction_triggered()
-{
-    EnvironmentDialog ed(this->settings);
-    ed.setModal(true);
-    ed.exec();
+{   
+    ed->exec();
 }
 
 void MainWindow::on_saveAction_triggered()
