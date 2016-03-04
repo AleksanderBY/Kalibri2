@@ -211,6 +211,13 @@ bool ADomCalibration::save(QString fileName)
             }
             writer->writeEndElement();
 
+            writer->writeStartElement("calculations");
+            map = this->getChannel(i)->getResult(j)->getCalculations();
+            for (iter = map.begin(); iter != map.end(); ++iter){
+                writer->writeAttribute(iter.key(),iter.value());
+            }
+            writer->writeEndElement();
+
             writer->writeStartElement("devices");
 
             devices=this->getChannel(i)->getResult(j)->getDevices();
