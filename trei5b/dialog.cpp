@@ -167,40 +167,40 @@ void Dialog::on_extChanged(const QString &arg1)
         priznak = ui->max->text().toDouble()>=ui->min->text().toDouble();
     }
 
-    if (priznak) {
-        ui->min->setStyleSheet("background-color: white");
-        ui->max->setStyleSheet("background-color: white");
-        pointsValidator->setRange(ui->min->text().toDouble(), ui->max->text().toDouble(),4);
-        ui->point1->setEnabled(true);
-        ui->point1->setText(oldPoint1);
-    }
-    else
-    {
-        ui->min->setStyleSheet("background-color: yellow");
-        ui->max->setStyleSheet("background-color: yellow");
-        pointsValidator->setRange(-10000, 10000, 4);
-        ui->point1->setEnabled(false);
-        oldPoint1=ui->point1->text();
-        ui->point1->clear();
-    }
+//    if (priznak) {
+//        ui->min->setStyleSheet("background-color: white");
+//        ui->max->setStyleSheet("background-color: white");
+//        pointsValidator->setRange(ui->min->text().toDouble(), ui->max->text().toDouble(),4);
+//        ui->point1->setEnabled(true);
+//        ui->point1->setText(oldPoint1);
+//    }
+//    else
+//    {
+//        ui->min->setStyleSheet("background-color: yellow");
+//        ui->max->setStyleSheet("background-color: yellow");
+//        pointsValidator->setRange(-10000, 10000, 4);
+//        ui->point1->setEnabled(false);
+//        oldPoint1=ui->point1->text();
+//        ui->point1->clear();
+//    }
     //hasAcceptableForm();
 }
 
 
 void Dialog::on_point1_textChanged(const QString &arg1)
 {
-    if (!ui->point1->hasAcceptableInput())
-    {
-        ui->point1->setStyleSheet("background-color: yellow");
-        oldPoint2=ui->point2->text();
-        ui->point2->setText("");
-        ui->point2->setEnabled(false);
-    }
-    else {
-        ui->point1->setStyleSheet("background-color: white");
-        //ui->point2->setText(oldPoint2);
-        ui->point2->setEnabled(true);
-    }
+//    if (!ui->point1->hasAcceptableInput())
+//    {
+//        ui->point1->setStyleSheet("background-color: yellow");
+//        oldPoint2=ui->point2->text();
+//        ui->point2->setText("");
+//        ui->point2->setEnabled(false);
+//    }
+//    else {
+//        ui->point1->setStyleSheet("background-color: white");
+//        //ui->point2->setText(oldPoint2);
+//        ui->point2->setEnabled(true);
+//    }
 }
 
 
@@ -230,34 +230,34 @@ void Dialog::start()
 
 void Dialog::on_point2_textChanged(const QString &arg1)
 {
-    if (!ui->point2->hasAcceptableInput())
-    {
-        ui->point2->setStyleSheet("background-color: yellow");
-        oldPoint3=ui->point3->text();
-        ui->point3->setText("");
-        ui->point3->setEnabled(false);
-    }
-    else {
-        ui->point2->setStyleSheet("background-color: white");
-        //ui->point2->setText(oldPoint2);
-        ui->point3->setEnabled(true);
-    }
+//    if (!ui->point2->hasAcceptableInput())
+//    {
+//        ui->point2->setStyleSheet("background-color: yellow");
+//        oldPoint3=ui->point3->text();
+//        ui->point3->setText("");
+//        ui->point3->setEnabled(false);
+//    }
+//    else {
+//        ui->point2->setStyleSheet("background-color: white");
+//        //ui->point2->setText(oldPoint2);
+//        ui->point3->setEnabled(true);
+//    }
 }
 
 void Dialog::on_point3_textEdited(const QString &arg1)
 {
-    if (!ui->point3->hasAcceptableInput())
-    {
-        ui->point3->setStyleSheet("background-color: yellow");
-        oldPoint4=ui->point4->text();
-        ui->point4->setText("");
-        ui->point4->setEnabled(false);
-    }
-    else {
-        ui->point3->setStyleSheet("background-color: white");
-        //ui->point2->setText(oldPoint2);
-        ui->point4->setEnabled(true);
-    }
+//    if (!ui->point3->hasAcceptableInput())
+//    {
+//        ui->point3->setStyleSheet("background-color: yellow");
+//        oldPoint4=ui->point4->text();
+//        ui->point4->setText("");
+//        ui->point4->setEnabled(false);
+//    }
+//    else {
+//        ui->point3->setStyleSheet("background-color: white");
+//        //ui->point2->setText(oldPoint2);
+//        ui->point4->setEnabled(true);
+//    }
 }
 
 void Dialog::on_type_editTextChanged(const QString &arg1)

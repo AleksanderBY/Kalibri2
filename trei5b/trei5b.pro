@@ -7,6 +7,8 @@
 QT       -= gui
 QT      += widgets sql
 
+CONFIG += c++11
+
 TARGET = ../../general/debug/ConnectDrivers/trei5b
 TEMPLATE = lib
 INCLUDEPATH    += ../general
