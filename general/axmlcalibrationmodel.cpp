@@ -1,7 +1,7 @@
 #include "axmlcalibrationmodel.h"
 #include <QDebug>
 #include <math.h>
-
+#include <QCryptographicHash>
 
 AXMLCalibrationModel::AXMLCalibrationModel(ADomCalibration *dom, int level, QObject *parent) : QAbstractTableModel(parent)
 {
@@ -254,6 +254,7 @@ bool ADomCalibration::parsing()
     AChannelCalibration * channel;
     AResultCalibration * result;
     QXmlStreamAttributes temp;
+    QCryptographicHash hash(QCryptographicHash::Sha1);
     while (!reader->atEnd()&&!reader->hasError())
     {
         QXmlStreamReader::TokenType token = reader->readNext();
@@ -488,6 +489,25 @@ bool ADomCalibration::parsing()
         }
 
         if (token == QXmlStreamReader::EndDocument) {
+            //Получаем хеши всех средств измерения
+            for (int i=0;i<this->channelCount();i++)
+            {
+                hash.reset();
+                channel = this->getChannel(i);
+                for (int j=0;j<channel->getResultsCount();j++)
+                {
+                    AResultCalibration * result = channel->getResult(j);
+                    for (int k=0;k<result->getDevices().count();k++)
+                    {
+                        AMeasuringDevice device = result->getDevices().at(k);
+                        QHash<QString, QString> param = device.getParam();
+                        foreach (QString key, param.keys()) {
+                            hash.addData(param.value(key).toUtf8());
+                        }
+                    }
+                }
+                qDebug()<<QString(hash.result().toHex());
+            }
             return true;
         }
     }
