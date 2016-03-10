@@ -112,7 +112,7 @@ private:
     QList<double> points;               //Список уникальных точек калибровки
     int currentPoint;                   //Индекс текущей точки калибровки
     QTimer * timer;                     //Таймер интервала опроса
-    int measurement;                    //Номер измерения в калибровке
+    int measurement1;                    //Номер измерения в калибровке
     QMap<int, AChannelCalibration*> calibrationChannel;
     QMap<int, AResultCalibration*> resultCalibrationList;
 

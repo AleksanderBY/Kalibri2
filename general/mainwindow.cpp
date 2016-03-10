@@ -603,7 +603,7 @@ void MainWindow::sl_set_next_point()
     //Задаем точку
     if (CPADriver->setValue(points.at(currentPoint), mA)) {
         this->logger->log("Точка установлена");
-        this->measurement = 1;
+        this->measurement1 = 1;
         this->timer->setInterval(1000);
         this->timer->start();
     }
@@ -611,17 +611,17 @@ void MainWindow::sl_set_next_point()
 
 void MainWindow::timer_overflow()
 {
-    if (measurement<=10) {
-        logger->log("Получаем значения №"+QString::number(measurement));
+    if (measurement1<=10) {
+        logger->log("Получаем значения №"+QString::number(measurement1));
         if (connectDriver->getValues(currentPollList)) {
             for (int i=0; i<currentPollList->count(); i++) {
                 int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
-                resultCalibrationList.value(tempChannel)->addResult("V"+QString::number(measurement), QString::number(currentPollList->at(i)->value));
+                resultCalibrationList.value(tempChannel)->addResult("V"+QString::number(measurement1), QString::number(currentPollList->at(i)->value));
                 qDebug()<<currentPollList->at(i)->value;
             }
 
         }
-        measurement++;
+        measurement1++;
     }
     else {
         logger->log("Калибровка точки завершена");
@@ -789,6 +789,7 @@ void MainWindow::on_pushButton_clicked()
 //    qDebug()<<CPADriver->thread();
 //    CPADriver->setValue(ui->doubleSpinBox->value(), m);
 
+    CPADriver->test();
 
 }
 
