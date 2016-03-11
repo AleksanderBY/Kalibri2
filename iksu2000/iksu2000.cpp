@@ -7,6 +7,8 @@ Iksu2000Plugin::Iksu2000Plugin()
     serial = new  QSerialPort();
     connect(serial, SIGNAL(error(QSerialPort::SerialPortError)), this, SLOT(on_serrial_error(QSerialPort::SerialPortError)));
     connect(serial, SIGNAL(aboutToClose()), this, SLOT(on_close()));
+    connect(serial, SIGNAL(readyRead()),this, SLOT(sl_readyRead()));
+    connect(this, SIGNAL(send_next_commond()), this, SLOT(sl_send_next_command()));
 }
 
 Iksu2000Plugin::~Iksu2000Plugin()
@@ -32,10 +34,9 @@ void Iksu2000Plugin::initialization(QSettings *settings)
         serial->setStopBits(QSerialPort::OneStop);
         serial->setDataBits(QSerialPort::Data8);
         serial->setParity(QSerialPort::NoParity);
-        serial->setFlowControl(QSerialPort::SoftwareControl);
-        //serial->setReadBufferSize(8);
-        serial->setDataTerminalReady(true);
-        serial->setRequestToSend(false);
+        serial->setFlowControl(QSerialPort::NoFlowControl);
+//        serial->setDataTerminalReady(true);
+//        serial->setRequestToSend(false);
     }
     else {
         emit this->log("Не удалось открыть порт "+portName+"!", Qt::red);
@@ -59,11 +60,14 @@ int Iksu2000Plugin::showInfo()
 void Iksu2000Plugin::test()
 {
     serial->write(test1, 12);serial->flush();
-    if (serial->waitForBytesWritten(1500)) Sleep(1000);
+    if (serial->waitForBytesWritten(1500)) Sleep(800);
 }
 
 bool Iksu2000Plugin::setValue(float value, measurement type_value)
 {
+    //Очищаем буфер команд
+    sendArray.clear();
+    current_send=0;
     //преобразуем значение в строку
     QString str_val = QString::number(value, 'g', 6);
     //Определяем есть ли в начале минус
@@ -244,7 +248,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
         if (value>1300||value<300) { error_val=1; break; }
         l1=4;l2=1;
         if (last_mode == type_value) break;
-        sendCOM(11);sendCOM(12);sendCOM(13);;sendCOM(13);sendCOM(13);sendCOM(12);
+        sendCOM(11);sendCOM(12);sendCOM(13);sendCOM(13);sendCOM(13);sendCOM(12);
         while (Ctype!=4){
             sendCOM(13);
             Ctype+=1;
@@ -291,8 +295,13 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
     }
     //Включаем эмуляцию и посылаем сигнал об успешном завершении
     sendCOM(12);
+
     emit this->set_value_ok();
     last_mode = type_value;
+    qDebug()<<sendArray.count();
+    //начинаем отправку команд
+    emit this->send_next_commond();
+    return true;
 }
 
 bool Iksu2000Plugin::setup()
@@ -331,140 +340,261 @@ void Iksu2000Plugin::sendCOM(int command)
     case 0:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(but0, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                 sendArray.push_back(10);
             }
-            serial->write(exec1, 22);
-            if (serial->waitForBytesWritten(1500)) Sleep(1000);
+             sendArray.push_back(17);
         }
         break;
     case 1:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(but1, 23);
-               if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                 sendArray.push_back(1);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+            sendArray.push_back(17);
         }
         break;
     case 2:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(but2, 23);
-               if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                 sendArray.push_back(2);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+             sendArray.push_back(17);
         }
         break;
     case 3:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(but3, 23);
-             if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                sendArray.push_back(3);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+             sendArray.push_back(17);
         }
         break;
     case 4:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(but4, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                 sendArray.push_back(4);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+             sendArray.push_back(17);
         }
         break;
     case 5:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(but5, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                sendArray.push_back(5);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+             sendArray.push_back(17);
         }
         break;
     case 6:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(but6, 23);
-               if (serial->waitForBytesWritten(1500)) Sleep(1000);
+               sendArray.push_back(6);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+            sendArray.push_back(17);
         }
         break;
     case 7:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(but7, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                sendArray.push_back(7);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+            sendArray.push_back(17);
         }
         break;
     case 8:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(but8, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                sendArray.push_back(8);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+            sendArray.push_back(17);
         }
         break;
     case 9:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(but9, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                sendArray.push_back(9);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+            sendArray.push_back(17);
         }
         break;
     case 11:
         if (serial->isOpen()) {
-                serial->write(reset, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+               sendArray.push_back(11);
         }
         break;
     case 12:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(enter, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                sendArray.push_back(12);
             }
-            serial->write(exec1, 22);
-            if (serial->waitForBytesWritten(1500)) Sleep(1000);
+            sendArray.push_back(17);
         }
         break;
     case 13:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(down, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                sendArray.push_back(13);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+            sendArray.push_back(17);
         }
         break;
     case 14:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(up, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                sendArray.push_back(14);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+            sendArray.push_back(17);
         }
         break;
     case 15:
         if (serial->isOpen()) {
             if (prev_command!=command) {
-                serial->write(minus, 23);
-                if (serial->waitForBytesWritten(1500)) Sleep(1000);
+                sendArray.push_back(16);
             }
-            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(1000);
+            sendArray.push_back(17);
         }
         break;
     default:
         break;
     }
+//    switch (command) {
+//    case 0:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(but0, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);
+//            if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 1:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(but1, 23);
+//               if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 2:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(but2, 23);
+//               if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 3:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(but3, 23);
+//             if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 4:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(but4, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 5:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(but5, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 6:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(but6, 23);
+//               if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 7:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(but7, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 8:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(but8, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 9:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(but9, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 11:
+//        if (serial->isOpen()) {
+//                serial->write(reset, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 12:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(enter, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);
+//            if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 13:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(down, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 14:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(up, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    case 15:
+//        if (serial->isOpen()) {
+//            if (prev_command!=command) {
+//                serial->write(minus, 23);
+//                if (serial->waitForBytesWritten(1500)) Sleep(800);
+//            }
+//            serial->write(exec1, 22);if (serial->waitForBytesWritten(1500)) Sleep(800);
+//        }
+//        break;
+//    default:
+//        break;
+//    }
     prev_command=command;
 }
 
@@ -479,6 +609,54 @@ void Iksu2000Plugin::on_close()
 {
     qDebug()<<"Закрытие порта";
     emit this->log("Закрытие порта");
+}
+
+void Iksu2000Plugin::sl_readyRead()
+{
+    QByteArray response;
+    response = serial->readAll();
+    qDebug()<<response;
+    responseArray.push_back(response);
+    if (response.at(response.count()-1)==0x0D) {
+        response.clear();
+        emit this->send_next_commond();
+
+    }
+
+}
+
+//Отправка очередной команды на прибор
+void Iksu2000Plugin::sl_send_next_command()
+{
+    if (!serial->isOpen()) {
+        return;
+    }
+    if (current_send>sendArray.count()-1) {
+        return;
+    }
+    qDebug()<<"Command";
+    byte command = sendArray.at(current_send);
+    switch (command) {
+        case 10:serial->write(but0, 23);serial->waitForBytesWritten(1500);qDebug()<<"1";break;
+        case 1: serial->write(but1, 23);serial->waitForBytesWritten(1500);break;
+        case 2: serial->write(but2, 23);serial->waitForBytesWritten(1500);break;
+        case 3: serial->write(but3, 23);serial->waitForBytesWritten(1500);break;
+        case 4: serial->write(but4, 23);serial->waitForBytesWritten(1500);break;
+        case 5: serial->write(but5, 23);serial->waitForBytesWritten(1500);break;
+        case 6: serial->write(but6, 23);serial->waitForBytesWritten(1500);break;
+        case 7: serial->write(but7, 23);serial->waitForBytesWritten(1500);break;
+        case 8: serial->write(but8, 23);serial->waitForBytesWritten(1500);break;
+        case 9: serial->write(but9, 23);serial->waitForBytesWritten(1500);break;
+        case 11:serial->write(reset, 23);serial->waitForBytesWritten(1500);break;
+        case 12:serial->write(enter, 23);serial->waitForBytesWritten(1500);break;
+        case 13:serial->write(down, 23);serial->waitForBytesWritten(1500);break;
+        case 14:serial->write(up, 23);serial->waitForBytesWritten(1500);break;
+        case 15:serial->write(minus, 23);serial->waitForBytesWritten(1500);break;
+        case 17:serial->write(exec1, 22);serial->waitForBytesWritten(1500);break;
+        default:
+            break;
+        }
+    current_send++;
 }
 
 QString Iksu2000Plugin::getType()

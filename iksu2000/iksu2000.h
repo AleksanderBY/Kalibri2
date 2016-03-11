@@ -64,16 +64,22 @@ private:
     int Ctype=0;        //Текущий пункт в подменю термопар
     int prev_command;           //преведущая комада для ИКСУ-2000
     void sendCOM(int command);  //отправка команды на ИКСУ-2000
+    QByteArray sendArray;       //последовательность команд для отправки прибору
+    QByteArray responseArray;   //ответ прибора
+    int current_send;           //текущая команда прибору
 
 
 signals:
     void set_value_ok();
     void set_value_error();
+    void send_next_commond();
     void log(QString message,Qt::GlobalColor category = Qt::white);
 
 private slots:
     void on_serrial_error(QSerialPort::SerialPortError error);
     void on_close();
+    void sl_readyRead();
+    void sl_send_next_command();
 
 //public slots:
 //    void on_enter();
