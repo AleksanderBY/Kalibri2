@@ -619,6 +619,7 @@ void Iksu2000Plugin::sl_readyRead()
     responseArray.push_back(response);
     if (response.at(response.count()-1)==0x0D) {
         response.clear();
+        Sleep(150);
         emit this->send_next_commond();
 
     }
