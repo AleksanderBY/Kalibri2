@@ -14,6 +14,7 @@ public:
     void addParam(QString key, QString value);              //добавление параметра прибору
     QHash<QString, QString> getParam() const;               //Получение параметров
     void setParam(const QHash<QString, QString> &value);    //установка всех параметров
+    void clear() {param.clear();}
 private:
     QHash<QString, QString> param;
 };

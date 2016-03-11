@@ -170,6 +170,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this->timer, SIGNAL(timeout()), this, SLOT(timer_overflow()));
     connect(this, SIGNAL(end_calibration_next_point()), SLOT(sl_set_next_point()));
     connect(this, SIGNAL(error_calibrations(QString)), SLOT(sl_error_calibration(QString)));
+    connect(CPADriver, SIGNAL(set_value_ok()), this, SLOT(sl_end_set_value()));
     //connect(myCalibrator, SIGNAL(start_calibration()), this, SLOT(sl_start_calibration()));
     //connect(myCalibrator, SIGNAL(set_next_point(double)), this, SLOT(sl_set_next_point(double)));
     //connect(this, SIGNAL(set_next_point_complete(bool)), myCalibrator, SLOT(on_set_next_point_complete(bool)));
@@ -427,6 +428,7 @@ void MainWindow::sl_read_values()
 {
 
 }
+
 //Обработка ошибок калибровки
 void MainWindow::sl_error_calibration(QString error)
 {
@@ -501,6 +503,7 @@ bool MainWindow::changeCPADriver(QString fileName)
         if (CPADriver) {
             //qDebug()<<"выгрузка плагина";
             //Уничтожение старого плагина
+            //disconnect(CPADriver, SIGNAL(set_value_ok()),this ,SLOT(sl_end_set_value()));
             CPAInterface * del = CPADriver;
             CPADriver = 0;
             //delete del;
@@ -510,6 +513,7 @@ bool MainWindow::changeCPADriver(QString fileName)
         qDebug()<<"Загрузка нового драйвера";
         CPADriver = qobject_cast<CPAInterface * >(CPAPluginLoader->instance());
         connect(CPADriver, SIGNAL(log(QString,Qt::GlobalColor)), logger, SLOT(on_log(QString,Qt::GlobalColor)));
+        //connect(CPADriver, SIGNAL(set_value_ok()),this ,SLOT(sl_end_set_value()));
         CPADriver->initialization(settings);
         settings->setValue("kalibri2/currentCPADriver", fileName);
         return true;
@@ -603,10 +607,15 @@ void MainWindow::sl_set_next_point()
     //Задаем точку
     if (CPADriver->setValue(points.at(currentPoint), mA)) {
         this->logger->log("Точка установлена");
-        this->measurement1 = 1;
-        this->timer->setInterval(1000);
-        this->timer->start();
     }
+}
+
+//Окончание установки значения
+void MainWindow::sl_end_set_value()
+{
+    this->measurement1 = 1;
+    this->timer->setInterval(1000);
+    this->timer->start();
 }
 
 void MainWindow::timer_overflow()

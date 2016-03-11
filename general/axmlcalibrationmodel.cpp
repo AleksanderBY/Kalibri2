@@ -251,8 +251,12 @@ bool ADomCalibration::parsing()
     //Вспомогательная переменная для хрнения типа тега
     int tag=-1;
     int lastTag=-1;
+    //ссылка на текущий канал
     AChannelCalibration * channel;
+    //ссылка на текущие результаты
     AResultCalibration * result;
+    //ссылка на текущий прибор
+    AMeasuringDevice device;
     QXmlStreamAttributes temp;
     QCryptographicHash hash(QCryptographicHash::Sha1);
     while (!reader->atEnd()&&!reader->hasError())
@@ -267,19 +271,28 @@ bool ADomCalibration::parsing()
         if (token == QXmlStreamReader::StartElement) {
 
             //Проверяем стартовый тег на правильность названия
+//            if (reader->name()=="body") tag=0;
+//            if (reader->name()=="channel") tag=1;
+//            if (reader->name()=="results1"||reader->name() == "results2"||reader->name() == "results3"||reader->name() == "results4") tag=2;
+//            if (reader->name()=="event_time") tag=3;
+//            if (reader->name()=="conditions") tag=4;
+//            if (reader->name()=="generalSI") tag=6;
+//            if (reader->name()=="secondarySI") tag=7;
+//            if (reader->name()=="SI") tag=5;
+
             if (reader->name()=="body") tag=0;
             if (reader->name()=="channel") tag=1;
-            if (reader->name()=="results1"||reader->name() == "results2"||reader->name() == "results3"||reader->name() == "results4") tag=2;
-            if (reader->name()=="event_time") tag=3;
+            if (reader->name()=="calibration") tag=2;
+            if (reader->name()=="results") tag=3;
             if (reader->name()=="conditions") tag=4;
-            if (reader->name()=="generalSI") tag=6;
-            if (reader->name()=="secondarySI") tag=7;
-            if (reader->name()=="SI") tag=5;
+            if (reader->name()=="calculations") tag=5;
+            if (reader->name()=="device") tag=6;
 
-            //Получаем атрибуты стартового элемента
-            temp = reader->attributes();
+            temp.clear();
             switch (tag) {
             case 0:{
+                //Получаем атрибуты стартового элемента
+                temp = reader->attributes();
                 //Проверяем правильную последовательность тэгов
                 //qDebug()<<lastTag;
                 if (lastTag!=-1) {
@@ -328,7 +341,7 @@ bool ADomCalibration::parsing()
             }
 
             case 1:{
-                AChannelCalibration * channel = new AChannelCalibration();
+                channel = new AChannelCalibration();
                 temp = reader->attributes();
                 if (temp.count()>0)
                     foreach (QXmlStreamAttribute attr, temp) {
@@ -337,121 +350,167 @@ bool ADomCalibration::parsing()
                 this->channelList.push_back(channel);
                 break;
             }
-
-
             case 2:{
-                AResultCalibration * result = new AResultCalibration();
-                AChannelCalibration * channel = getChannel(channelCount()-1);
+                result = new AResultCalibration();
+                channel->addResultCalibration(result);
                 temp = reader->attributes();
                 if (temp.count()>0)
                     foreach (QXmlStreamAttribute attr, temp) {
-                        //qDebug()<<attr.name().toString();
-                        result->addResult(attr.name().toString(), attr.value().toString().replace(',','.'));
-                    }
-                //Добавляем точку калибровки если её нет
-                if (!result->getOthers().contains("point")) result->addOther("point", channel->getChannelData().value("point"+QString::number(channel->getResultsCount()+1)));
-                //Добавляем среднее значение если его нет
-                if (!result->getCalculations().contains("av")) {
-                    double summa = 0;
-                    for (int i=1; i<=10; i++) {
-                        summa = summa+result->getRes("V"+QString::number(i)).replace(',','.').toDouble();
-                    }
-                    double av = summa/10;
-                    //qDebug()<<summa;
-                    result->addCalulation("av", QString::number(av, 'g', 12));
-                }
-                //Добавляем отклонение если его нет
-                if (!result->getCalculations().contains("delta")) {
-                    double av = result->getCalculation("av").toDouble();
-                    //qDebug()<<QString::number(av,'g',12);
-                    double point = result->getOther("point").toDouble();
-                    double delta = point - av;
-                    //qDebug()<<delta;
-                    result->addCalulation("delta", QString::number(delta, 'g', 12));
-                }
-
-                //Добавляем неопределенность измерения если его нет
-                if (!result->getCalculations().contains("neoprIzm"))
-                {
-                    double av = result->getCalculation("av").toDouble();
-                    double summa = 0;
-                    for (int i=1; i<=10; i++) {
-                        summa = summa + pow(av-result->getRes("V"+QString::number(i)).toDouble(), 2);
-                    }
-                    summa = summa/90;
-                    summa = sqrt(summa);
-                    result->addCalulation("neoprIzm", QString::number(summa, 'g', 12));
-                }
-                channel->addResultCalibration(result);
-
-                break;
-            }
-
-            case 3:{
-                AChannelCalibration * channel = getChannel(channelCount()-1);
-                temp = reader->attributes();
-                //Временно для старого формата файлов
-                AResultCalibration * result;
-                for (int i=0; i<channel->getResultsCount();i++)
-                {
-                    result=channel->getResult(i);
-                    foreach (QXmlStreamAttribute attr, temp) {
-                        //qDebug()<<attr.name().toString();
                         result->addOther(attr.name().toString(), attr.value().toString());
                     }
-                }
+                break;
+            }
+            case 3:{
+                QXmlStreamAttributes temp1 = reader->attributes();
+                if (temp1.count()>0)
+                    foreach (QXmlStreamAttribute attr1, temp1) {
+                        result->addResult(attr1.name().toString(), attr1.value().toString().replace(',','.'));
+                        qDebug()<<attr1.name().toString();
+                    }
                 break;
             }
             case 4:{
-                AChannelCalibration * channel = getChannel(channelCount()-1);
                 temp = reader->attributes();
-                //Временно для старого формата файлов
-                AResultCalibration * result;
-                for (int i=0; i<channel->getResultsCount();i++)
-                {
-                    result=channel->getResult(i);
+                if (temp.count()>0)
                     foreach (QXmlStreamAttribute attr, temp) {
-                        //qDebug()<<attr.name().toString();
                         result->addCondition(attr.name().toString(), attr.value().toString());
                     }
-                }
-                break;}
-            case 5:{
-                AChannelCalibration * channel = getChannel(channelCount()-1);
-                temp = reader->attributes();
-                //Временно для старого формата файлов
-                AResultCalibration * result;
-                for (int i=0; i<channel->getResultsCount();i++)
-                {
-                    result=channel->getResult(i);
-                    AMeasuringDevice MDevice;
-                    foreach (QXmlStreamAttribute attr, temp) {
-                        QString key;
-                        if (attr.name().toString()=="Tip") key="Type";
-                        if (attr.name().toString()=="NZ") key="SN";
-                        if (attr.name().toString()=="NP") key="SKN";
-                        if (attr.name().toString()=="DO") key="SROK";
-                        MDevice.addParam(key, attr.value().toString());
-                    }
-                    if (lastTag==6) {
-                        MDevice.addParam("role", "general");
-                    }
-                    if (lastTag==7) {
-                        MDevice.addParam("role", "secondary");
-                    }
-                    result->addDevice(MDevice);
-                }
-
-
-            }
                 break;
+            }
+            case 5:{
+                temp = reader->attributes();
+                if (temp.count()>0)
+                    foreach (QXmlStreamAttribute attr, temp) {
+                        result->addCalulation(attr.name().toString(), attr.value().toString());
+                    }
+                break;
+            }
+            case 6:{
+                temp = reader->attributes();
+                device.clear();
+                if (temp.count()>0)
+                    foreach (QXmlStreamAttribute attr, temp) {
+                        device.addParam(attr.name().toString(), attr.value().toString());
+
+                    }
+                result->addDevice(device);
+                break;
+            }
+
+
+//            case 2:{
+//                AResultCalibration * result = new AResultCalibration();
+//                AChannelCalibration * channel = getChannel(channelCount()-1);
+//                temp = reader->attributes();
+//                if (temp.count()>0)
+//                    foreach (QXmlStreamAttribute attr, temp) {
+//                        //qDebug()<<attr.name().toString();
+//                        result->addResult(attr.name().toString(), attr.value().toString().replace(',','.'));
+//                    }
+//                //Добавляем точку калибровки если её нет
+//                if (!result->getOthers().contains("point")) result->addOther("point", channel->getChannelData().value("point"+QString::number(channel->getResultsCount()+1)));
+//                //Добавляем среднее значение если его нет
+//                if (!result->getCalculations().contains("av")) {
+//                    double summa = 0;
+//                    for (int i=1; i<=10; i++) {
+//                        summa = summa+result->getRes("V"+QString::number(i)).replace(',','.').toDouble();
+//                    }
+//                    double av = summa/10;
+//                    //qDebug()<<summa;
+//                    result->addCalulation("av", QString::number(av, 'g', 12));
+//                }
+//                //Добавляем отклонение если его нет
+//                if (!result->getCalculations().contains("delta")) {
+//                    double av = result->getCalculation("av").toDouble();
+//                    //qDebug()<<QString::number(av,'g',12);
+//                    double point = result->getOther("point").toDouble();
+//                    double delta = point - av;
+//                    //qDebug()<<delta;
+//                    result->addCalulation("delta", QString::number(delta, 'g', 12));
+//                }
+
+//                //Добавляем неопределенность измерения если его нет
+//                if (!result->getCalculations().contains("neoprIzm"))
+//                {
+//                    double av = result->getCalculation("av").toDouble();
+//                    double summa = 0;
+//                    for (int i=1; i<=10; i++) {
+//                        summa = summa + pow(av-result->getRes("V"+QString::number(i)).toDouble(), 2);
+//                    }
+//                    summa = summa/90;
+//                    summa = sqrt(summa);
+//                    result->addCalulation("neoprIzm", QString::number(summa, 'g', 12));
+//                }
+//                channel->addResultCalibration(result);
+
+//                break;
+//            }
+
+//            case 3:{
+//                AChannelCalibration * channel = getChannel(channelCount()-1);
+//                temp = reader->attributes();
+//                //Временно для старого формата файлов
+//                AResultCalibration * result;
+//                for (int i=0; i<channel->getResultsCount();i++)
+//                {
+//                    result=channel->getResult(i);
+//                    foreach (QXmlStreamAttribute attr, temp) {
+//                        //qDebug()<<attr.name().toString();
+//                        result->addOther(attr.name().toString(), attr.value().toString());
+//                    }
+//                }
+//                break;
+//            }
+//            case 4:{
+//                AChannelCalibration * channel = getChannel(channelCount()-1);
+//                temp = reader->attributes();
+//                //Временно для старого формата файлов
+//                AResultCalibration * result;
+//                for (int i=0; i<channel->getResultsCount();i++)
+//                {
+//                    result=channel->getResult(i);
+//                    foreach (QXmlStreamAttribute attr, temp) {
+//                        //qDebug()<<attr.name().toString();
+//                        result->addCondition(attr.name().toString(), attr.value().toString());
+//                    }
+//                }
+//                break;}
+//            case 5:{
+//                AChannelCalibration * channel = getChannel(channelCount()-1);
+//                temp = reader->attributes();
+//                //Временно для старого формата файлов
+//                AResultCalibration * result;
+//                for (int i=0; i<channel->getResultsCount();i++)
+//                {
+//                    result=channel->getResult(i);
+//                    AMeasuringDevice MDevice;
+//                    foreach (QXmlStreamAttribute attr, temp) {
+//                        QString key;
+//                        if (attr.name().toString()=="Tip") key="Type";
+//                        if (attr.name().toString()=="NZ") key="SN";
+//                        if (attr.name().toString()=="NP") key="SKN";
+//                        if (attr.name().toString()=="DO") key="SROK";
+//                        MDevice.addParam(key, attr.value().toString());
+//                    }
+//                    if (lastTag==6) {
+//                        MDevice.addParam("role", "general");
+//                    }
+//                    if (lastTag==7) {
+//                        MDevice.addParam("role", "secondary");
+//                    }
+//                    result->addDevice(MDevice);
+//                }
+
+
+//            }
+//                break;
 //            default:{
 //                return false;
 //                break;
 //            }
 
             }
-            if (lastTag!=5&&(tag==6||tag==7)) lastTag=tag;
+//            if (lastTag!=5&&(tag==6||tag==7)) lastTag=tag;
 
 
 
@@ -490,24 +549,24 @@ bool ADomCalibration::parsing()
 
         if (token == QXmlStreamReader::EndDocument) {
             //Получаем хеши всех средств измерения
-            for (int i=0;i<this->channelCount();i++)
-            {
-                hash.reset();
-                channel = this->getChannel(i);
-                for (int j=0;j<channel->getResultsCount();j++)
-                {
-                    AResultCalibration * result = channel->getResult(j);
-                    for (int k=0;k<result->getDevices().count();k++)
-                    {
-                        AMeasuringDevice device = result->getDevices().at(k);
-                        QHash<QString, QString> param = device.getParam();
-                        foreach (QString key, param.keys()) {
-                            hash.addData(param.value(key).toUtf8());
-                        }
-                    }
-                }
-                qDebug()<<QString(hash.result().toHex());
-            }
+//            for (int i=0;i<this->channelCount();i++)
+//            {
+//                hash.reset();
+//                channel = this->getChannel(i);
+//                for (int j=0;j<channel->getResultsCount();j++)
+//                {
+//                    AResultCalibration * result = channel->getResult(j);
+//                    for (int k=0;k<result->getDevices().count();k++)
+//                    {
+//                        AMeasuringDevice device = result->getDevices().at(k);
+//                        QHash<QString, QString> param = device.getParam();
+//                        foreach (QString key, param.keys()) {
+//                            hash.addData(param.value(key).toUtf8());
+//                        }
+//                    }
+//                }
+//                qDebug()<<QString(hash.result().toHex());
+//            }
             return true;
         }
     }

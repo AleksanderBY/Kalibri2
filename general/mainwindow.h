@@ -46,6 +46,7 @@ public slots:
     void setStart(bool start);
     void sl_set_next_point();                   //Слот установки следующей точки калибровки
     void sl_read_values();                      //Слот чтения значений с контроллера
+    void sl_end_set_value();                    //Слот окончания установки значения
     void sl_error_calibration(QString error);   //Слот обработки ошибок калибровки
 
 private slots:

@@ -67,6 +67,7 @@ private:
     QByteArray sendArray;       //последовательность команд для отправки прибору
     QByteArray responseArray;   //ответ прибора
     int current_send;           //текущая команда прибору
+    int _delay;                 //пауза между командами
 
 
 signals:
