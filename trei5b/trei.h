@@ -26,6 +26,8 @@ public:
     QList<double> getPoints(QList<PollClass *> * pollList) Q_DECL_OVERRIDE;
     QList<double> getParametrValue(QSqlRecord record) Q_DECL_OVERRIDE;
     QString getTagAdress(QSqlRecord record) Q_DECL_OVERRIDE;
+    bool validationPollList(QList<PollClass *>  * pollList) Q_DECL_OVERRIDE;
+    QList<measurement> getMeasurementTypes(QList<PollClass *> * pollList) Q_DECL_OVERRIDE;
 private:
     QVector<QString> *socketNameList;
     QVector<int> * socketList;

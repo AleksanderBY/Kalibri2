@@ -83,6 +83,18 @@ public:
 
     void aply();                    //Принять изменения
 
+    bool getInReportTemperature() const;
+    void setInReportTemperature(bool value);
+
+    bool getInReportHumidity() const;
+    void setInReportHumidity(bool value);
+
+    bool getInReportPressure() const;
+    void setInReportPressure(bool value);
+
+    bool getInReportVoltage() const;
+    void setInReportVoltage(bool value);
+
 private:
     Ui::EnvironmentDialog *ui;
     QSettings * settings;           //Указатель на хранилище настроек
@@ -107,6 +119,10 @@ private:
     QString voltageDeviceSKN;       //Номер свидетельства калибровки измерителя напряжения
     QDate voltageDeviceSROK;        //Срок действия свидетельства калибровки измерителя напряжения
     QDateTime lastEdit;             //Последнее редактирование
+    bool inReportTemperature;       //признак включения прибора температуры в отчет
+    bool inReportHumidity;          //признак включения прибора влажности в отчет
+    bool inReportPressure;          //признак включения прибора давления в отчет
+    bool inReportVoltage;           //признак включения прибора напряжения в отчет
 
     void loadEnvironment();         //Загрузка условий
     void saveEnvironment();         //Сохранение условий

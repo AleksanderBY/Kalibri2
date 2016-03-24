@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
-QT += widgets xml sql
+QT += widgets xml sql printsupport multimedia
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -23,7 +23,7 @@ SOURCES += main.cpp\
     aloggermodel.cpp \
     axmlcalibrationmodel.cpp \
     environmentdialog.cpp \
-    aenvironment.cpp
+    #aenvironment.cpp
 
 HEADERS  += mainwindow.h \
     cpainterface.h \
@@ -36,7 +36,8 @@ HEADERS  += mainwindow.h \
     aloggermodel.h \
     axmlcalibrationmodel.h \
     environmentdialog.h \
-    aenvironment.h
+    #aenvironment.h \
+    measurement.h
 
 FORMS    += mainwindow.ui \
     settingsdialog.ui \

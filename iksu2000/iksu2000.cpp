@@ -548,3 +548,77 @@ QString Iksu2000Plugin::getSROK()
     return SROK.toString("dd.MM.yyyy");
 }
 
+//Возвращаем основную погрешность эталона для заданого режима измерения
+double Iksu2000Plugin::getIndeterminacyGeneral(float value, measurement type_value)
+{
+    switch (type_value) {
+    case mA:
+        return 0.001/sqrt(3);
+        break;
+    case mV:
+        return 0.003/sqrt(3);
+        break;
+    case V:
+        return 0.003/sqrt(3);
+        break;
+    case Om: if (value>=0&&value<180) return 0.015/sqrt(3);
+        if (value>=180&&value<=320) return 0.025/sqrt(3);
+        break;
+    case C100M1_426:
+    case C100M1_428:
+        return 0.05/sqrt(3);
+        break;
+    case C50M1_426:
+    case C50M1_428:
+    case C50P:
+        return 0.08/sqrt(3);
+        break;
+    case CPt100IEC385:
+    case C100P: if (value>=-200&&value<200) return 0.03/sqrt(3);
+        if (value>=200&&value<=600) return 0.05/sqrt(3);
+        break;
+    case CTypeJ:
+    case CTypeK:
+    case CTypeXK:
+        return 0.3/sqrt(3);
+        break;
+    case CTypeB:
+        return 2/sqrt(3);
+        break;
+    case CTypeS:
+        return 1/sqrt(3);
+        break;
+    case CTypeA1: if (value>=0&&value<1200) return 2/sqrt(3);
+        if (value>=1200&&value<=2500) return 2.5/sqrt(3);
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
+
+double Iksu2000Plugin::getIndeterminacySecondary(float value, measurement type_value, QHash<QString, QString> conditions)
+{
+    float temperature;
+    //проверяем наличие температуры в списке
+    if (conditions.contains("temperature")) {
+        bool ok;
+        temperature = conditions.value("temperature").toFloat(&ok);
+        if (ok) {
+            if (temperature>=15&&temperature<=25) return 0;
+            else return this->getIndeterminacyGeneral(value, type_value);
+        }
+    }
+    return 0;
+}
+//Возвращаем подходящий тип задатчика
+measurement Iksu2000Plugin::getMeasurenentType(QList<measurement> list)
+{
+    for (int i=0; i<list.count();i++) {
+        if (list.at(i)==mA||list.at(i)==mV||list.at(i)==V||list.at(i)==Om||list.at(i)==C100M1_426||list.at(i)==C100M1_428||list.at(i)==C50M1_426
+                    ||list.at(i)==C50M1_428||list.at(i)==C50P||list.at(i)==C100P||list.at(i)==CPt100IEC385||list.at(i)==CTypeJ
+                    ||list.at(i)==CTypeK||list.at(i)==CTypeB||list.at(i)==CTypeA1||list.at(i)==CTypeS||list.at(i)==CTypeXK) return list.at(i);
+    }
+    return notSupport;
+}
+

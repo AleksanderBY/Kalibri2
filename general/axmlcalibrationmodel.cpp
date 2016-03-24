@@ -12,9 +12,10 @@ AXMLCalibrationModel::AXMLCalibrationModel(ADomCalibration *dom, int level, QObj
 
 void AXMLCalibrationModel::change_current_channel(QModelIndex index)
 {
+
 //    if (modelLevel==1) {
 //        emit this->beginResetModel();
-//        dom->setCurrentChannel(index.row());
+//        dom->setCurrentChannel(index);
 //        emit this->endResetModel();
 //    }
 }
@@ -30,13 +31,13 @@ int AXMLCalibrationModel::rowCount(const QModelIndex &parent) const
 {
     if (!dom->isDomValid()) return 0;
     //qDebug()<<dom->getChannel(dom->getCurrentChannel()).getResultsCount();
-    return dom->channelCount();
+    return  dom->tChannelList.count(); //dom->channelCount();
 }
 
 int AXMLCalibrationModel::columnCount(const QModelIndex &parent) const
 {
     if (!dom->isDomValid()) return 0;
-    return dom->getSetting("fieldscount").toInt();
+    return  dom->getSetting("fieldscount").toInt();
 }
 
 QVariant AXMLCalibrationModel::data(const QModelIndex &index, int role) const
@@ -48,32 +49,18 @@ QVariant AXMLCalibrationModel::data(const QModelIndex &index, int role) const
     if (modelLevel==0){
         switch (role) {
         case Qt::DisplayRole:
-            return dom->getChannel(index.row())->getChannelData().value(dom->getSetting("field"+QString::number(index.column())));
+            return dom->tChannelList.value(index.row()).channelInfo.value(dom->settings.value("field"+QString::number(index.column()))); //dom->getChannel(index.row())->getChannelData().value(dom->getSetting("field"+QString::number(index.column())));
             break;
         case Qt::EditRole:
-            return dom->getChannel(index.row())->getChannelData().value(dom->getSetting("field"+QString::number(index.column())));
+            return dom->tChannelList.value(index.row()).channelInfo.value(dom->settings.value("field"+QString::number(index.column()))); //dom->getChannel(index.row())->getChannelData().value(dom->getSetting("field"+QString::number(index.column())));
             break;
+        case Qt::TextAlignmentRole:
+            return Qt::AlignCenter;
         default:
             return QVariant();
             break;
         }
     }
-//    else
-//    {
-//        switch (role) {
-//        case Qt::DisplayRole:
-//            return  dom->getChannel(dom->getCurrentChannel()).resultList.at(index.row())->resultAttributes.at(index.column()).value().toString();
-//            break;
-////        case Qt::EditRole:
-////            return dom->getChannel(index.row())->attribute(index.column()).value().toString();
-////            break;
-//        default:
-//            return QVariant();
-//            break;
-//        }
-//    }
-
-
 }
 
 
@@ -112,8 +99,6 @@ ADomCalibration::~ADomCalibration()
 {
     delete reader;
     delete writer;
-    qDeleteAll(this->channelList);
-    this->channelList.clear();
 }
 
 void ADomCalibration::setFileName(QString fileName)
@@ -159,10 +144,7 @@ bool ADomCalibration::open(QString fileName)
 
 void ADomCalibration::clear()
 {
-    qDeleteAll(this->channelList);
-    this->channelList.clear();
     this->settings.clear();
-    //this->currentChannel=-1;
     this->column=0;
 }
 
@@ -177,65 +159,61 @@ bool ADomCalibration::save(QString fileName)
     writer->setDevice(&file);
     writer->writeStartDocument();
     writer->writeStartElement("body");
-    //QXmlStreamAttribute attr;
-    QHash<QString, QString>::iterator iter;
-    QHash<QString, QString> map = this->getSettings();
-    QVector<AMeasuringDevice> devices;
-    for (iter = map.begin(); iter != map.end(); ++iter){
-        writer->writeAttribute(iter.key(),iter.value());
+    foreach (QString key, this->settings.keys()) {
+        writer->writeAttribute(key, settings.value(key));
     }
-    for (int i=0; i<channelList.count(); i++){
+    foreach (TChannelCalibration channel, tChannelList) {
         writer->writeStartElement("channel");
-        map = this->getChannel(i)->getChannelData();
-        for (iter = map.begin(); iter != map.end(); ++iter){
-            writer->writeAttribute(iter.key(),iter.value());
+        foreach (QString key, channel.channelInfo.keys()) {
+            writer->writeAttribute(key, channel.channelInfo.value(key));
         }
-        for (int j=0; j<this->getChannel(i)->getResultsCount(); j++){
+
+        foreach (TCalibration calibration, channel.CalibtationList) {
             writer->writeStartElement("calibration");
-            map = this->getChannel(i)->getResult(j)->getOthers();
-            for (iter = map.begin(); iter != map.end(); ++iter){
-                writer->writeAttribute(iter.key(),iter.value());
+            foreach (QString keyCal, calibration.calibrationInfo.keys()) {
+                writer->writeAttribute(keyCal,calibration.calibrationInfo.value(keyCal));
             }
-
-            writer->writeStartElement("results");
-            map = this->getChannel(i)->getResult(j)->getResults();
-            for (iter = map.begin(); iter != map.end(); ++iter){
-                writer->writeAttribute(iter.key(),iter.value());
-            }
-            writer->writeEndElement();
-
-            writer->writeStartElement("conditions");
-            map = this->getChannel(i)->getResult(j)->getConditions();
-            for (iter = map.begin(); iter != map.end(); ++iter){
-                writer->writeAttribute(iter.key(),iter.value());
-            }
-            writer->writeEndElement();
-
-            writer->writeStartElement("calculations");
-            map = this->getChannel(i)->getResult(j)->getCalculations();
-            for (iter = map.begin(); iter != map.end(); ++iter){
-                writer->writeAttribute(iter.key(),iter.value());
-            }
-            writer->writeEndElement();
-
-            writer->writeStartElement("devices");
-
-            devices=this->getChannel(i)->getResult(j)->getDevices();
-            for (int k=0; k<devices.count();k++) {
-                writer->writeStartElement("device");
-                map = devices.at(k).getParam();
-                for (iter = map.begin(); iter != map.end(); ++iter){
-                    writer->writeAttribute(iter.key(),iter.value());
+            foreach (TPoint point, calibration.pointList) {
+                writer->writeStartElement("point");
+                foreach (QString keyPoint, point.pointInfo.keys()) {
+                    writer->writeAttribute(keyPoint, point.pointInfo.value(keyPoint));
+                }
+                if (point.results.count()>0) {
+                    writer->writeStartElement("results");
+                    foreach (QString keyRes, point.results.keys()) {
+                        writer->writeAttribute(keyRes, point.results.value(keyRes));
+                    }
+                    writer->writeEndElement();
+                }
+                if (point.calculations.count()>0) {
+                    writer->writeStartElement("calculations");
+                    foreach (QString keyCalc, point.calculations.keys()) {
+                        writer->writeAttribute(keyCalc, point.calculations.value(keyCalc));
+                    }
+                    writer->writeEndElement();
                 }
                 writer->writeEndElement();
             }
-
-            writer->writeEndElement();
-
-
+            if (calibration.conditions.count()>0) {
+                writer->writeStartElement("conditions");
+                foreach (QString keyCond, calibration.conditions.keys()) {
+                    writer->writeAttribute(keyCond, calibration.conditions.value(keyCond));
+                }
+                writer->writeEndElement();
+            }
+            if (calibration.deviceList.count()>0) {
+                writer->writeStartElement("devices");
+                foreach (TDevice device, calibration.deviceList) {
+                    writer->writeStartElement("device");
+                    foreach (QString dev, device.deviceInfo.keys()) {
+                        writer->writeAttribute(dev, device.deviceInfo.value(dev));
+                    }
+                    writer->writeEndElement();
+                }
+                writer->writeEndElement();
+            }
             writer->writeEndElement();
         }
-
 
         writer->writeEndElement();
     }
@@ -246,19 +224,17 @@ bool ADomCalibration::save(QString fileName)
 
 bool ADomCalibration::parsing()
 {
+    tChannelList.clear();
+    TChannelCalibration readChannel;
+    TCalibration readCalibration;
+    TPoint readPoint;
+    TDevice readDevice;
     //Удаляем ранее загруженные данные
     this->clear();
     //Вспомогательная переменная для хрнения типа тега
     int tag=-1;
     int lastTag=-1;
-    //ссылка на текущий канал
-    AChannelCalibration * channel;
-    //ссылка на текущие результаты
-    AResultCalibration * result;
-    //ссылка на текущий прибор
-    AMeasuringDevice device;
     QXmlStreamAttributes temp;
-    QCryptographicHash hash(QCryptographicHash::Sha1);
     while (!reader->atEnd()&&!reader->hasError())
     {
         QXmlStreamReader::TokenType token = reader->readNext();
@@ -269,28 +245,9 @@ bool ADomCalibration::parsing()
             encoding = reader->documentEncoding();
         }
         if (token == QXmlStreamReader::StartElement) {
-
-            //Проверяем стартовый тег на правильность названия
-//            if (reader->name()=="body") tag=0;
-//            if (reader->name()=="channel") tag=1;
-//            if (reader->name()=="results1"||reader->name() == "results2"||reader->name() == "results3"||reader->name() == "results4") tag=2;
-//            if (reader->name()=="event_time") tag=3;
-//            if (reader->name()=="conditions") tag=4;
-//            if (reader->name()=="generalSI") tag=6;
-//            if (reader->name()=="secondarySI") tag=7;
-//            if (reader->name()=="SI") tag=5;
-
-            if (reader->name()=="body") tag=0;
-            if (reader->name()=="channel") tag=1;
-            if (reader->name()=="calibration") tag=2;
-            if (reader->name()=="results") tag=3;
-            if (reader->name()=="conditions") tag=4;
-            if (reader->name()=="calculations") tag=5;
-            if (reader->name()=="device") tag=6;
-
             temp.clear();
-            switch (tag) {
-            case 0:{
+            //Читаем настройки базы данных
+            if (reader->name()=="body") {
                 //Получаем атрибуты стартового элемента
                 temp = reader->attributes();
                 //Проверяем правильную последовательность тэгов
@@ -305,6 +262,11 @@ bool ADomCalibration::parsing()
                     foreach (QXmlStreamAttribute attr, temp) {
                         settings.insert(attr.name().toString(), attr.value().toString());
                     }
+                //Проверяем версию файла
+                if (settings.value("version")!="3") {
+                    log(tr("Ошибка файла: неправильная версия файла"), Qt::red);
+                    return false;
+                }
                 //проверяем наличие обязательных полей и правильность их заполнения
                 if (!settings.contains("driver")) {
                     log(tr("Ошибка файла: отсутствует информация о драйвере опроса"), Qt::red);
@@ -336,237 +298,118 @@ bool ADomCalibration::parsing()
                             }
                         }
                     }
-                lastTag = tag;
-                break;
             }
-
-            case 1:{
-                channel = new AChannelCalibration();
+            //Читаем каналы
+            if (reader->name()=="channel") {
+                readChannel.channelInfo.clear();
+                readChannel.CalibtationList.clear();
                 temp = reader->attributes();
                 if (temp.count()>0)
                     foreach (QXmlStreamAttribute attr, temp) {
-                        channel->addChannelData(attr.name().toString(),attr.value().toString());
+                        readChannel.channelInfo.insert(attr.name().toString(),attr.value().toString());
                     }
-                this->channelList.push_back(channel);
-                break;
             }
-            case 2:{
-                result = new AResultCalibration();
-                channel->addResultCalibration(result);
+            //читаем калибровки
+            if (reader->name()=="calibration") {
+                //Очищаем переменную для новых результатов кальбровки
+                readCalibration.calibrationInfo.clear();
+                readCalibration.pointList.clear();
+                readCalibration.deviceList.clear();
+                readCalibration.conditions.clear();
                 temp = reader->attributes();
                 if (temp.count()>0)
                     foreach (QXmlStreamAttribute attr, temp) {
-                        result->addOther(attr.name().toString(), attr.value().toString());
+                        readCalibration.calibrationInfo.insert(attr.name().toString(),attr.value().toString());
                     }
-                break;
             }
-            case 3:{
-                QXmlStreamAttributes temp1 = reader->attributes();
-                if (temp1.count()>0)
-                    foreach (QXmlStreamAttribute attr1, temp1) {
-                        result->addResult(attr1.name().toString(), attr1.value().toString().replace(',','.'));
-                        qDebug()<<attr1.name().toString();
-                    }
-                break;
-            }
-            case 4:{
+            //читаем точки
+            if (reader->name()=="point") {
+                readPoint.pointInfo.clear();
+                readPoint.results.clear();
+                readPoint.calculations.clear();
                 temp = reader->attributes();
                 if (temp.count()>0)
                     foreach (QXmlStreamAttribute attr, temp) {
-                        result->addCondition(attr.name().toString(), attr.value().toString());
+                        readPoint.pointInfo.insert(attr.name().toString(),attr.value().toString());
                     }
-                break;
             }
-            case 5:{
+
+            //читаем результаты
+            if (reader->name()=="results") {
+                readPoint.results.clear();
                 temp = reader->attributes();
                 if (temp.count()>0)
                     foreach (QXmlStreamAttribute attr, temp) {
-                        result->addCalulation(attr.name().toString(), attr.value().toString());
+                        readPoint.results.insert(attr.name().toString(),attr.value().toString());
+
                     }
-                break;
             }
-            case 6:{
+            //читаем расчеты
+            if (reader->name()=="calculations") {
+                readPoint.calculations.clear();
                 temp = reader->attributes();
-                device.clear();
                 if (temp.count()>0)
                     foreach (QXmlStreamAttribute attr, temp) {
-                        device.addParam(attr.name().toString(), attr.value().toString());
-
+                        readPoint.calculations.insert(attr.name().toString(),attr.value().toString());
                     }
-                result->addDevice(device);
-                break;
+            }
+            //читаем условия
+            if (reader->name()=="conditions") {
+                readCalibration.conditions.clear();
+                temp = reader->attributes();
+                if (temp.count()>0)
+                    foreach (QXmlStreamAttribute attr, temp) {
+                        readCalibration.conditions.insert(attr.name().toString(),attr.value().toString());
+                    }
+            }
+            //читаем измерительные приборы
+            if (reader->name()=="device") {
+                readDevice.deviceInfo.clear();
+                temp = reader->attributes();
+                if (temp.count()>0)
+                    foreach (QXmlStreamAttribute attr, temp) {
+                        readDevice.deviceInfo.insert(attr.name().toString(),attr.value().toString());
+                    }
             }
 
-
-//            case 2:{
-//                AResultCalibration * result = new AResultCalibration();
-//                AChannelCalibration * channel = getChannel(channelCount()-1);
-//                temp = reader->attributes();
-//                if (temp.count()>0)
-//                    foreach (QXmlStreamAttribute attr, temp) {
-//                        //qDebug()<<attr.name().toString();
-//                        result->addResult(attr.name().toString(), attr.value().toString().replace(',','.'));
-//                    }
-//                //Добавляем точку калибровки если её нет
-//                if (!result->getOthers().contains("point")) result->addOther("point", channel->getChannelData().value("point"+QString::number(channel->getResultsCount()+1)));
-//                //Добавляем среднее значение если его нет
-//                if (!result->getCalculations().contains("av")) {
-//                    double summa = 0;
-//                    for (int i=1; i<=10; i++) {
-//                        summa = summa+result->getRes("V"+QString::number(i)).replace(',','.').toDouble();
-//                    }
-//                    double av = summa/10;
-//                    //qDebug()<<summa;
-//                    result->addCalulation("av", QString::number(av, 'g', 12));
-//                }
-//                //Добавляем отклонение если его нет
-//                if (!result->getCalculations().contains("delta")) {
-//                    double av = result->getCalculation("av").toDouble();
-//                    //qDebug()<<QString::number(av,'g',12);
-//                    double point = result->getOther("point").toDouble();
-//                    double delta = point - av;
-//                    //qDebug()<<delta;
-//                    result->addCalulation("delta", QString::number(delta, 'g', 12));
-//                }
-
-//                //Добавляем неопределенность измерения если его нет
-//                if (!result->getCalculations().contains("neoprIzm"))
-//                {
-//                    double av = result->getCalculation("av").toDouble();
-//                    double summa = 0;
-//                    for (int i=1; i<=10; i++) {
-//                        summa = summa + pow(av-result->getRes("V"+QString::number(i)).toDouble(), 2);
-//                    }
-//                    summa = summa/90;
-//                    summa = sqrt(summa);
-//                    result->addCalulation("neoprIzm", QString::number(summa, 'g', 12));
-//                }
-//                channel->addResultCalibration(result);
-
-//                break;
-//            }
-
-//            case 3:{
-//                AChannelCalibration * channel = getChannel(channelCount()-1);
-//                temp = reader->attributes();
-//                //Временно для старого формата файлов
-//                AResultCalibration * result;
-//                for (int i=0; i<channel->getResultsCount();i++)
-//                {
-//                    result=channel->getResult(i);
-//                    foreach (QXmlStreamAttribute attr, temp) {
-//                        //qDebug()<<attr.name().toString();
-//                        result->addOther(attr.name().toString(), attr.value().toString());
-//                    }
-//                }
-//                break;
-//            }
-//            case 4:{
-//                AChannelCalibration * channel = getChannel(channelCount()-1);
-//                temp = reader->attributes();
-//                //Временно для старого формата файлов
-//                AResultCalibration * result;
-//                for (int i=0; i<channel->getResultsCount();i++)
-//                {
-//                    result=channel->getResult(i);
-//                    foreach (QXmlStreamAttribute attr, temp) {
-//                        //qDebug()<<attr.name().toString();
-//                        result->addCondition(attr.name().toString(), attr.value().toString());
-//                    }
-//                }
-//                break;}
-//            case 5:{
-//                AChannelCalibration * channel = getChannel(channelCount()-1);
-//                temp = reader->attributes();
-//                //Временно для старого формата файлов
-//                AResultCalibration * result;
-//                for (int i=0; i<channel->getResultsCount();i++)
-//                {
-//                    result=channel->getResult(i);
-//                    AMeasuringDevice MDevice;
-//                    foreach (QXmlStreamAttribute attr, temp) {
-//                        QString key;
-//                        if (attr.name().toString()=="Tip") key="Type";
-//                        if (attr.name().toString()=="NZ") key="SN";
-//                        if (attr.name().toString()=="NP") key="SKN";
-//                        if (attr.name().toString()=="DO") key="SROK";
-//                        MDevice.addParam(key, attr.value().toString());
-//                    }
-//                    if (lastTag==6) {
-//                        MDevice.addParam("role", "general");
-//                    }
-//                    if (lastTag==7) {
-//                        MDevice.addParam("role", "secondary");
-//                    }
-//                    result->addDevice(MDevice);
-//                }
-
-
-//            }
-//                break;
-//            default:{
-//                return false;
-//                break;
-//            }
-
-            }
-//            if (lastTag!=5&&(tag==6||tag==7)) lastTag=tag;
-
-
-
-
-            if (reader->name() == "channel") {
-//                channel = new AChannelCalibration();
-//                channel->setAttributes(reader->attributes());
-//                channelList.push_back(channel);
-            }
-            if (reader->name() == "results1"||reader->name() == "results2"||reader->name() == "results3"||reader->name() == "results4") {
-//                result = new AResultCalibration();
-//                result->setResults(reader->attributes());
-//                QXmlStreamAttribute attr("point" , channel->getChannelAttributes().at(channel->resultList.count()+10).value().toString());
-//                result->resultAttributes.insert(0, attr);
-//                channel->addResultCalibration(result);
-            }
-
-            if (reader->name() == "event_time") {
-//                temp = reader->attributes();
-//                if (temp.count()>0)
-//                {
-//                    int i = channel->resultList.count();
-//                    if (i>0)
-//                        for (int j=0;j<i;j++){
-//                            for(int k=0;k<temp.count();k++) {
-//                                channel->resultList.at(j)->resultAttributes.insert(k,temp.at(k));
-//                            }
-//                        }
-//                }
-
-            }
         }
         if (token == QXmlStreamReader::EndElement) {
-            //qDebug()<<"/"+reader->name().toString();
-        }
+            if (reader->name()=="device") readCalibration.deviceList.push_back(readDevice);
 
+            if (reader->name()=="point") {
+                //Если нету результатов расчета то получаем их
+                if (readPoint.calculations.count()<1) {
+                    double summa = 0;
+                    QList<double> p;
+                    foreach (QString key, readPoint.results.keys()) {
+                        p.push_back(readPoint.results[key].replace(",",".").toDouble());
+                        summa += p.last();
+                    }
+                    int n = p.count();
+                    double av = summa/n;
+                    readPoint.calculations.insert("av", QString::number(av,'g',12));
+                    double delta = readPoint.pointInfo.value("value").toDouble()-av;
+                    readPoint.calculations.insert("delta", QString::number(delta,'g',12));
+                    //Вычисляем неопределенность измерения
+                    double summa2=0;
+                    foreach (double p_i, p) {
+                        summa2 += pow(p_i-av, 2);
+                    }
+                    double koef = 1.0/(n*(n-1));
+
+                    double neoprIzm = sqrt(koef*summa2);
+                    readPoint.calculations.insert("neoprIzm", QString::number(neoprIzm,'g',12));
+                }
+                readCalibration.pointList.push_back(readPoint);
+            }
+            if (reader->name()=="calibration") {
+                readChannel.CalibtationList.push_back(readCalibration);
+            }
+            if (reader->name()=="channel") {
+                tChannelList.push_back(readChannel);
+            }
+        }
         if (token == QXmlStreamReader::EndDocument) {
-            //Получаем хеши всех средств измерения
-//            for (int i=0;i<this->channelCount();i++)
-//            {
-//                hash.reset();
-//                channel = this->getChannel(i);
-//                for (int j=0;j<channel->getResultsCount();j++)
-//                {
-//                    AResultCalibration * result = channel->getResult(j);
-//                    for (int k=0;k<result->getDevices().count();k++)
-//                    {
-//                        AMeasuringDevice device = result->getDevices().at(k);
-//                        QHash<QString, QString> param = device.getParam();
-//                        foreach (QString key, param.keys()) {
-//                            hash.addData(param.value(key).toUtf8());
-//                        }
-//                    }
-//                }
-//                qDebug()<<QString(hash.result().toHex());
-//            }
             return true;
         }
     }
@@ -574,25 +417,12 @@ bool ADomCalibration::parsing()
 }
 
 
-AChannelCalibration::AChannelCalibration(QObject *parent)
-{
-
-}
-
-AChannelCalibration::~AChannelCalibration()
-{
-    qDeleteAll(this->resultList);
-    this->resultList.clear();
-    this->channelData.clear();
-}
-
-
-
 bool AXMLCalibrationModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if (role == Qt::DisplayRole || role == Qt::EditRole)
     {
-       dom->getChannel(index.row())->addChannelData(dom->getSetting("field"+QString::number(index.column())), value.toString());
+        dom->tChannelList[index.row()].channelInfo.insert(dom->settings.value("field"+QString::number(index.column())), value.toString());
+        //dom->getChannel(index.row())->addChannelData(dom->getSetting("field"+QString::number(index.column())), value.toString());
     }
         //dom->getChannel(index.row())->setAttribute(index.column(), value.toString());
     return true;
@@ -645,6 +475,7 @@ AXMLCalibrationResultModel::AXMLCalibrationResultModel(ADomCalibration *dom, QOb
 
 void AXMLCalibrationResultModel::change_current_channel(QModelIndex index, QModelIndex prev)
 {
+
     this->dom->setCurrentChannel(index);
     this->model_reset();
 }
@@ -660,37 +491,41 @@ int AXMLCalibrationResultModel::rowCount(const QModelIndex &parent) const
     if (!dom->isDomValid()) return 0;
 //    qDebug()<<"Калибровок";
 //    qDebug()<<dom->getChannel(dom->getCurrentChannel()).getResultsCount();
-    return dom->getChannel(dom->getCurrentChannel())->getResultsCount();
+    if (dom->tChannelList[dom->getCurrentChannel()].CalibtationList.count()<=0) return 0;
+    return dom->tChannelList[dom->getCurrentChannel()].CalibtationList.last().pointList.count(); //dom->getChannel(dom->getCurrentChannel())->getResultsCount();
 
 }
 
 int AXMLCalibrationResultModel::columnCount(const QModelIndex &parent) const
 {
     if (!dom->isDomValid()) return 0;
-    return 20;
+    return 16;
 }
 
 QVariant AXMLCalibrationResultModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid()) return QVariant();
     if (!dom->isDomValid()) return QVariant();
-
     switch (role) {
     case Qt::DisplayRole:
+
         if (index.column()>2&&index.column()<13) {
-            return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getRes("V"+QString::number(index.column()-2));
+            return dom->tChannelList[dom->getCurrentChannel()].CalibtationList.last().pointList[index.row()].results.value("V"+QString::number(index.column()-2));
         }
-        if (index.column()==0) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getOther("point");
-        if (index.column()==1) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getOther("date");
-        if (index.column()==2) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getOther("time");
-        if (index.column()==13) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("av");
-        if (index.column()==14) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("delta");
-        if (index.column()==15) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("neoprIzm");
-        if (index.column()==16) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("temperature");
-        if (index.column()==17) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("humidity");
-        if (index.column()==18) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("pressure");
-        if (index.column()==19) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("voltage");
-        return 1;//dom->getChannel(index.row()).getChannelData().value(dom->getSetting("field"+QString::number(index.column())));
+        if (index.column()==0) return dom->tChannelList[dom->getCurrentChannel()].CalibtationList.last().pointList[index.row()].pointInfo.value("value");
+        if (index.column()==1) return dom->tChannelList[dom->getCurrentChannel()].CalibtationList.last().calibrationInfo.value("date");
+        if (index.column()==2) return dom->tChannelList[dom->getCurrentChannel()].CalibtationList.last().calibrationInfo.value("time");
+        if (index.column()==13) return dom->tChannelList[dom->getCurrentChannel()].CalibtationList.last().pointList[index.row()].calculations.value("av");
+        if (index.column()==14) return dom->tChannelList[dom->getCurrentChannel()].CalibtationList.last().pointList[index.row()].calculations.value("delta");
+        if (index.column()==15) return dom->tChannelList[dom->getCurrentChannel()].CalibtationList.last().pointList[index.row()].calculations.value("neoprIzm");
+//        if (index.column()==13) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("av");
+//        if (index.column()==14) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("delta");
+//        if (index.column()==15) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCalculation("neoprIzm");
+//        if (index.column()==16) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("temperature");
+//        if (index.column()==17) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("humidity");
+//        if (index.column()==18) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("pressure");
+//        if (index.column()==19) return dom->getChannel(dom->getCurrentChannel())->getResult(index.row())->getCondition("voltage");
+//        return 1;//dom->getChannel(index.row()).getChannelData().value(dom->getSetting("field"+QString::number(index.column())));
         break;
     case Qt::EditRole:
         return 1;//dom->getChannel(index.row()).getChannelData().value(dom->getSetting("field"+QString::number(index.column())));
@@ -755,53 +590,43 @@ QVariant AXMLCalibrationResultModel::headerData(int section, Qt::Orientation ori
 }
 
 
-AResultCalibration::AResultCalibration(QObject *parent)
-{
-
-}
-
-AResultCalibration::~AResultCalibration()
-{
-    this->results.clear();
-    this->conditions.clear();
-}
-QHash<QString, QString> AResultCalibration::getCalculations() const
-{
-    return calculations;
-}
-
-QVector<AMeasuringDevice> AResultCalibration::getDevices() const
-{
-    return devices;
-}
-
-QHash<QString, QString> AResultCalibration::getOthers() const
-{
-    return others;
-}
-
-void AMeasuringDevice::addParam(QString key, QString value)
-{
-    if (key=="Type"||key=="SN"||key=="SKN"||key=="SROK"||key=="role")
-        this->param.insert(key, value);
-}
-
-QHash<QString, QString> AMeasuringDevice::getParam() const
-{
-    return param;
-}
-void AMeasuringDevice::setParam(const QHash<QString, QString> &value)
-{
-    param = value;
-}
-
-
-
-
 bool AXMLCalibrationResultModel::insertRows(int row, int count, const QModelIndex &parent)
 {
     emit this->beginInsertRows(parent,row, row+count-1);
 
     emit this->endInsertRows();
     return true;
+}
+
+
+AXMLCalibrationListModel::AXMLCalibrationListModel(ADomCalibration *dom, QObject *parent)
+{
+    this->dom=dom;
+}
+
+int AXMLCalibrationListModel::rowCount(const QModelIndex &parent) const
+{
+    return dom->tChannelList.value(dom->getCurrentChannel()).CalibtationList.count();
+}
+
+QVariant AXMLCalibrationListModel::data(const QModelIndex &index, int role) const
+{
+    if (!index.isValid()) return QVariant();
+    TCalibration calibration = dom->tChannelList.value(dom->getCurrentChannel()).CalibtationList.value(index.row());
+    if (role == Qt::DisplayRole)
+            return calibration.calibrationInfo.value("date")+"/"+calibration.calibrationInfo.value("time")+" - "+calibration.calibrationInfo.value("uuid");
+        else
+            return QVariant();
+}
+
+
+Qt::ItemFlags AXMLCalibrationListModel::flags(const QModelIndex &index) const
+{
+    return Qt::ItemIsEnabled|Qt::ItemIsSelectable;
+}
+
+
+int AXMLCalibrationListModel::columnCount(const QModelIndex &parent) const
+{
+    return 1;
 }

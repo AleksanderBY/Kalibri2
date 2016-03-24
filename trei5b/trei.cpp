@@ -17,6 +17,7 @@ Trei::Trei()
     supportTypesList.append("M732U +-78mV/K");
     supportTypesList.append("M745A +-78mV/L");
     supportTypesList.append("M745A +-78mV/K");
+    supportTypesList.append("M732U 100Om/50M");
     dlg.setSupportType(supportTypesList);
     dlg.setModal(true);
 
@@ -166,8 +167,16 @@ bool Trei::getValues(QList<PollClass *> *pollList)
         for (int i=0; i<pollList->count();i++) {
             if (pollList->at(i)->attr.value("controller")==key) {
                 float val;
+                float deltaP;
                 net_get_list(&val);
-                pollList->at(i)->value=val;
+                //Добавляем поправку
+                if (pollList->at(i)->attr.contains("deltaP")) {
+                    deltaP = pollList->at(i)->attr.value("deltaP").toDouble();
+                }
+                else {
+                    deltaP = 0.0;
+                }
+                pollList->at(i)->value=val-deltaP;
                 //qDebug()<<val;
             }
         }
@@ -242,12 +251,12 @@ QList<double> Trei::getPoints(QList<PollClass *> *pollList)
         //Проверяем правильность полей min, max
         double PMin,PMax;
         bool ok;
-        PMin = pollList->at(i)->attr.value("min").toDouble(&ok);
+        PMin = pollList->at(i)->attr["min"].replace(',','.').toDouble(&ok);
         if (!ok) {
             qDebug()<<"Неправильное поле min";
             continue;
         }
-        PMax = pollList->at(i)->attr.value("max").toDouble(&ok);
+        PMax = pollList->at(i)->attr["max"].replace(',','.').toDouble(&ok);
         if (!ok) {
             qDebug()<<"Неправильное поле max";
             continue;
@@ -256,31 +265,77 @@ QList<double> Trei::getPoints(QList<PollClass *> *pollList)
             qDebug()<<"Неверный диапазон";
             continue;
         }
+
+        measurement measurementType = pollList->at(i)->measurementType;
         double EMin, EMax;
-        if (mType== "M745A 0-5mA") {
-            EMin = 0; EMax = 5;
+        switch (measurementType) {
+        case mA:
+            if (mType== "M745A 0-5mA"||mType=="M732U 0-5mA") {
+                EMin = 0; EMax = 5;
+            }
+            if (mType== "M745A 4-20mA"||mType=="M732U 4-20mA") {
+                EMin = 4; EMax = 20;
+            }
+            for (int j=1; j<=4; j++) {
+                //Проверяем наличие поля тип измерительного канала
+                if (!pollList->at(i)->attr.contains("point"+QString::number(j))) {
+                    qDebug()<<"Точка:"+QString::number(j)+" отсутствует";
+                    continue;
+                }
+                //Проверяем корректность поля точки канала
+                double PPoint = pollList->at(i)->attr["point"+QString::number(j)].replace(',','.').toDouble(&ok);
+                if (!ok) {
+                    qDebug()<<"Неправильное значение поля точки "+QString::number(j);
+                    continue;
+                }
+                double EPoint = (EMax-EMin)*(PPoint-PMin)/(PMax-PMin)+EMin;
+                pollList->at(i)->points.insert(pollList->at(i)->attr.value("point"+QString::number(j)), EPoint);
+                listPoint.push_back(EPoint);
+            }
+            break;
+        case CTypeXK:
+        case CTypeS:
+        case CTypeB:
+        case CTypeK:
+        case CTypeJ:
+        case C50M1_428:
+        case C50M1_426:
+        case C100M1_428:
+        case C100M1_426:
+            for (int j=1; j<=4; j++) {
+                //Проверяем наличие поля тип измерительного канала
+                if (!pollList->at(i)->attr.contains("point"+QString::number(j))) {
+                    qDebug()<<"Точка:"+QString::number(j)+" отсутствует";
+                    continue;
+                }
+                //Проверяем корректность поля точки канала
+                double PPoint = pollList->at(i)->attr["point"+QString::number(j)].replace(',','.').toDouble(&ok);
+                if (!ok) {
+                    qDebug()<<"Неправильное значение поля точки "+QString::number(j);
+                    continue;
+                }
+                pollList->at(i)->points.insert(pollList->at(i)->attr.value("point"+QString::number(j)), PPoint);
+                listPoint.push_back(PPoint);
+            }
+            break;
+        default:
+            break;
         }
 
-        if (mType== "M745A 4-20mA") {
-            EMin = 4; EMax = 20;
+
+
+        //Передаем в основную программу паузы между запросами
+        if (mType=="M745A 4-20mA"||mType== "M745A 0-5mA"||"M745A +-78mV/L") {
+            pollList->at(i)->startDelay = 3000;
+            pollList->at(i)->delay = 3000;
         }
 
-        for (int j=1; j<=4; j++) {
-            //Проверяем наличие поля тип измерительного канала
-            if (!pollList->at(i)->attr.contains("point"+QString::number(j))) {
-                qDebug()<<"Точка:"+QString::number(j)+" отсутствует";
-                continue;
-            }
-            //Проверяем корректность поля точки канала
-            double PPoint = pollList->at(i)->attr.value("point"+QString::number(j)).toDouble(&ok);
-            if (!ok) {
-                qDebug()<<"Неправильное значение поля точки "+QString::number(j);
-                continue;
-            }
-            double EPoint = (EMax-EMin)*PPoint/(PMax-PMin)+EMin;
-            pollList->at(i)->points.insert(pollList->at(i)->attr.value("point"+QString::number(j)), EPoint);
-            listPoint.push_back(EPoint);
+        if (mType=="M732U 4-20mA"||mType== "M732U 0-5mA"||"M732U +-78mV/L") {
+            pollList->at(i)->startDelay = 1000;
+            pollList->at(i)->delay = 1000;
         }
+
+
     }
     QSet<double> temp = listPoint.toSet();
     listPoint = temp.toList();
@@ -336,6 +391,46 @@ QList<double> Trei::getParametrValue(QSqlRecord record)
 QString Trei::getTagAdress(QSqlRecord record)
 {
     return record.value("adress").toString();
+}
+
+//Проверяем возможность совместной калибровки каналов из списка
+bool Trei::validationPollList(QList<PollClass *>  * pollList)
+{
+
+    //список пуст
+    if (pollList->count()<=0) return false;
+    //в списке одно значение
+    if (pollList->count()==1) return true;
+    //много значений
+    QString firstType = pollList->at(0)->attr.value("type");
+    for (int i=1; i<pollList->count();i++) {
+        if (firstType!=pollList->at(i)->attr.value("type")) return false;
+    }
+    return true;
+}
+//Получаем список поддерживаемых типов задатчиков
+QList<measurement> Trei::getMeasurementTypes(QList<PollClass *> *pollList)
+{
+    QList<measurement> list;
+    if (pollList->count()<=0) return list;
+    QString mType = pollList->at(0)->attr.value("type");
+    if (mType=="M732U 4-20mA"||mType== "M732U 0-5mA"||mType=="M745A 4-20mA"||mType== "M745A 0-5mA"){
+        list<<mA;
+    }
+    if (mType=="M732U +-78mV/L"||mType== "M745A +-78mV/L"){
+        list<<CTypeXK;
+        list<<mV;
+    }
+    if (mType=="M732U +-78mV/K"||mType== "M745A +-78mV/K"){
+        list<<CTypeK;
+        list<<mV;
+    }
+    if (mType=="M732U 100Om/50M"){
+        list<<C50M1_428;
+        list<<Om;
+    }
+
+    return list;
 }
 
 

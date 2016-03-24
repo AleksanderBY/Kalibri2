@@ -85,3 +85,18 @@ QString ManualPlugin::getSROK()
     return SROK.toString("dd.MM.yyyy");
 }
 
+double ManualPlugin::getIndeterminacyGeneral(float value, measurement type_value)
+{
+    return 0;
+}
+
+double ManualPlugin::getIndeterminacySecondary(float value, measurement type_value, QHash<QString, QString> conditions)
+{
+    return 0;
+}
+
+measurement ManualPlugin::getMeasurenentType(QList<measurement> list)
+{
+
+}
+

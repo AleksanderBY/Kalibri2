@@ -76,6 +76,11 @@ public:
     QDateTime getLastDateEdit() const;
     void setLastDateEdit(const QDateTime &value);
 
+    bool getInReportTemperature() const;
+    bool getInReportHumidity() const;
+    bool getInReportPressure() const;
+    bool getInReportVoltage() const;
+
 private:
     QSettings * settings;           //Указатель на хранилище настроек
     EnvironmentDialog * ed;         //Диалог редактирования условий
@@ -100,6 +105,10 @@ private:
     QString voltageDeviceSKN;       //Номер свидетельства калибровки измерителя напряжения
     QDate voltageDeviceSROK;        //Срок действия свидетельства калибровки измерителя напряжения
     QDateTime lastDateEdit;         //Последнее редактирование
+    bool inReportTemperature;       //признак включения прибора температуры в отчет
+    bool inReportHumidity;          //признак включения прибора влажности в отчет
+    bool inReportPressure;          //признак включения прибора давления в отчет
+    bool inReportVoltage;           //признак включения прибора напряжения в отчет
 };
 
 #endif // AENVIRONMENT_H

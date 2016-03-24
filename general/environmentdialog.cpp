@@ -204,6 +204,46 @@ void EnvironmentDialog::setLastEdit(const QDateTime &value)
 {
     lastEdit = value;
 }
+bool EnvironmentDialog::getInReportTemperature() const
+{
+    return inReportTemperature;
+}
+
+void EnvironmentDialog::setInReportTemperature(bool value)
+{
+    inReportTemperature = value;
+}
+bool EnvironmentDialog::getInReportHumidity() const
+{
+    return inReportHumidity;
+}
+
+void EnvironmentDialog::setInReportHumidity(bool value)
+{
+    inReportHumidity = value;
+}
+bool EnvironmentDialog::getInReportPressure() const
+{
+    return inReportPressure;
+}
+
+void EnvironmentDialog::setInReportPressure(bool value)
+{
+    inReportPressure = value;
+}
+bool EnvironmentDialog::getInReportVoltage() const
+{
+    return inReportVoltage;
+}
+
+void EnvironmentDialog::setInReportVoltage(bool value)
+{
+    inReportVoltage = value;
+}
+
+
+
+
 
 
 
@@ -251,6 +291,15 @@ void EnvironmentDialog::loadEnvironment()
     this->voltageDeviceSROK = settings->value("environment/voltageDeviceSROK").toDate();
     ui->voltageDeviceSROK->setDate(voltageDeviceSROK);
 
+    this->inReportTemperature = settings->value("environment/inTemperature", true).toBool();
+    ui->inReportTemperature->setChecked(inReportTemperature);
+    this->inReportHumidity = settings->value("environment/inHumidity", true).toBool();
+    ui->inReportHumidity->setChecked(inReportHumidity);
+    this->inReportPressure = settings->value("environment/inPressure", true).toBool();
+    ui->inReportPressure->setChecked(inReportPressure);
+    this->inReportVoltage = settings->value("environment/inVoltage", true).toBool();
+    ui->inReportVoltage->setChecked(inReportVoltage);
+
     this->lastEdit = settings->value("environment/lastEdit").toDateTime();
 }
 
@@ -296,6 +345,16 @@ void EnvironmentDialog::saveEnvironment()
     settings->setValue("environment/voltageDeviceSKN", voltageDeviceSKN);
     this->voltageDeviceSROK = ui->voltageDeviceSROK->date();
     settings->setValue("environment/voltageDeviceSROK", voltageDeviceSROK);
+
+    this->inReportTemperature = ui->inReportTemperature->isChecked();
+    settings->setValue("environment/inTemperature", inReportTemperature);
+    this->inReportHumidity = ui->inReportHumidity->isChecked();
+    settings->setValue("environment/inHumidity", inReportHumidity);
+    this->inReportPressure = ui->inReportPressure->isChecked();
+    settings->setValue("environment/inPressure", inReportPressure);
+    this->inReportVoltage = ui->inReportVoltage->isChecked();
+    settings->setValue("environment/inVoltage", inReportVoltage);
+
     //Получаем и сохраняем время внесения изменений
     this->lastEdit = QDateTime::currentDateTime();
     settings->setValue("environment/lastEdit", lastEdit);

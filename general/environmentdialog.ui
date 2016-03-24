@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>373</width>
-    <height>657</height>
+    <width>379</width>
+    <height>725</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -112,6 +112,13 @@
        <item>
         <widget class="QDateEdit" name="temperatureDeviceSROK"/>
        </item>
+       <item>
+        <widget class="QCheckBox" name="inReportTemperature">
+         <property name="text">
+          <string>Включить в отчет</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
     </layout>
@@ -202,6 +209,13 @@
        <item>
         <widget class="QDateEdit" name="humidityDeviceSROK"/>
        </item>
+       <item>
+        <widget class="QCheckBox" name="inReportHumidity">
+         <property name="text">
+          <string>Включить в отчет</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
     </layout>
@@ -291,6 +305,13 @@
        </item>
        <item>
         <widget class="QDateEdit" name="pressureDeviceSROK"/>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="inReportPressure">
+         <property name="text">
+          <string>Включить в отчет</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -389,6 +410,13 @@ p, li { white-space: pre-wrap; }
        </item>
        <item>
         <widget class="QDateEdit" name="voltageDeviceSROK"/>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="inReportVoltage">
+         <property name="text">
+          <string>Включить в отчет</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

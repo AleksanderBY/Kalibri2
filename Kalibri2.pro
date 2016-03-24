@@ -4,4 +4,5 @@ SUBDIRS += \
     general \
     iksu2000 \
     trei5b \
-    manual
+    manual \
+    MSR-63

@@ -20,7 +20,14 @@ AEnvironment::AEnvironment(QSettings *settings)
     this->pressureDeviceZN = settings->value("environment/pressureDeviceZN").toString();
     this->pressureDeviceSKN = settings->value("environment/pressureDeviceSKN").toString();
     this->pressureDeviceSROK = settings->value("environment/pressureDeviceSROK").toDate();
-
+    this->voltageDeviceType = settings->value("environment/voltageDeviceType").toString();
+    this->voltageDeviceZN = settings->value("environment/voltageDeviceZN").toString();
+    this->voltageDeviceSKN = settings->value("environment/voltageDeviceSKN").toString();
+    this->voltageDeviceSROK = settings->value("environment/voltageDeviceSROK").toDate();
+    this->inReportTemperature = settings->value("environment/inTemperature", true).toBool();
+    this->inReportHumidity = settings->value("environment/inHumidity", true).toBool();
+    this->inReportPressure = settings->value("environment/inPressure", true).toBool();
+    this->inReportVoltage = settings->value("environment/inVoltage", true).toBool();
 }
 
 QString AEnvironment::getTemperature() const
@@ -211,6 +218,26 @@ QDateTime AEnvironment::getLastDateEdit() const
 void AEnvironment::setLastDateEdit(const QDateTime &value)
 {
     lastDateEdit = value;
+}
+
+bool AEnvironment::getInReportTemperature() const
+{
+    return inReportTemperature;
+}
+
+bool AEnvironment::getInReportHumidity() const
+{
+    return inReportHumidity;
+}
+
+bool AEnvironment::getInReportPressure() const
+{
+    return inReportPressure;
+}
+
+bool AEnvironment::getInReportVoltage() const
+{
+    return inReportVoltage;
 }
 
 

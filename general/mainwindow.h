@@ -22,6 +22,9 @@
 #include "aloggermodel.h"
 #include "cpainterface.h"
 #include "environmentdialog.h"
+#include <QPrinter>
+#include <QTextDocument>
+#include <QMediaPlayer>
 
 #include "../trei5b/dataineterface.h"
 
@@ -57,7 +60,7 @@ private slots:
     void on_cloneButton_clicked();
     void on_exitAction_triggered();
     void timer_overflow();                      //слот окончания выдержки времени при опросе
-    void poll();
+    void delayTimer_overflow();
     void on_pushButton_clicked();
     void on_changeCPA(bool checked);
     void on_action_triggered();
@@ -65,6 +68,18 @@ private slots:
     void on_environmentAction_triggered();
 
     void on_saveAction_triggered();
+
+    void on_pushButton_3_clicked();
+
+    void on_saveAsAction_triggered();
+
+    void on_deleteAll_triggered();
+
+    void on_pushButton_4_clicked();
+
+    void on_pushButton_5_clicked();
+
+    void on_pushButton_7_clicked();
 
 signals:
 
@@ -78,6 +93,7 @@ signals:
 
 private:
     Ui::MainWindow *ui;
+    QString fileName;                   //имя файла базы данных
     bool start;                         //Признак разрешения на калибровку
     //QSqlDatabase sgDb;                //База данных сигналов
     //QSqlQuery sgQuery;                //Запрос к базе данных
@@ -104,7 +120,6 @@ private:
     Calibrator * myCalibrator;          //ссылка на класс калибратора
     //QThread * calibratorThread;         //Поток для калибратора
 
-    int step;                           //вариация опроса
     bool automaticSet;                  //Признак автоматического задания генерации на эталоне
 
     //----------------Данные для калибровки
@@ -113,14 +128,19 @@ private:
     QList<double> points;               //Список уникальных точек калибровки
     int currentPoint;                   //Индекс текущей точки калибровки
     QTimer * timer;                     //Таймер интервала опроса
-    int measurement1;                    //Номер измерения в калибровке
-    QMap<int, AChannelCalibration*> calibrationChannel;
-    QMap<int, AResultCalibration*> resultCalibrationList;
+    QTimer * delayTimer;                //Таймер для пауз в работе приложения
+    int measurement1;                   //Номер измерения в калибровке
+    measurement measurementType;        //Тип измерения текущий
+    //QMap<int, TChannelCalibration> calibrationChannel;
+    QMap<int, TCalibration> calibrationList;
+    QMap<int, TPoint> pointList;
+    int startDelay,delay;
 
     //------------- ADomCalicration------------------------
     ADomCalibration *dom;
     AXMLCalibrationModel * XMLmodel;
     AXMLCalibrationResultModel * XMLResultsModel;
+    AXMLCalibrationListModel * XMLCalibrationModel;
     //-----------------ALoggerModel------------------------
     ALoggerModel * logger;
     //-----------------Интерфейс задатчика ----------------
