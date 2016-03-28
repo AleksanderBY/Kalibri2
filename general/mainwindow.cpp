@@ -373,11 +373,20 @@ void MainWindow::on_pushButton_2_clicked()
     //Проверяем актуальность условий калибровки
     QDateTime lastEdit = ed->getLastEdit();
     int deltaTime = lastEdit.secsTo(QDateTime::currentDateTime());
-//    if (deltaTime>14400) {
-//        this->logger->log("Данные об условиях проведения калибровки устарели", Qt::red);
-//        return;
-//    }
-
+    if (deltaTime>14400) {
+        this->logger->log("Данные об условиях проведения калибровки устарели", Qt::red);
+        return;
+    }
+    //Проверяем условия калибровки
+    conditions.clear();
+    conditions.insert("temperature", ed->getTemperature());
+    conditions.insert("humidity", ed->getHumidity());
+    conditions.insert("pressure", ed->getPressure());
+    conditions.insert("voltage", ed->getVoltage());
+    if (!CPADriver->checkConditions(conditions)) {
+        this->logger->log("Не пройден контроль условий эксплуатации эталона "+CPADriver->getName(), Qt::red);
+        return;
+    }
     //Очищаем список каналов от данных преведущей калибровки
     pollList->clear();
     //Очищаем список калибровок
@@ -426,7 +435,7 @@ void MainWindow::on_pushButton_2_clicked()
 
     points = this->connectDriver->getPoints(pollList);
 
-    if (points.count()<0) {
+    if (points.count()<=0) {
         this->logger->log("Нет заданных точек для калибровки", Qt::yellow);
         return;
     }
@@ -434,6 +443,7 @@ void MainWindow::on_pushButton_2_clicked()
     startDelay = pollList->at(0)->startDelay;
     delay = pollList->at(0)->delay;
     qDebug()<<"Задержка"+QString::number(delay);
+    qDebug()<<"количество точек калибровки " + QString::number(points.count());
     ui->progressBar->setMaximum(points.count()*10);
     ui->progressBar->setValue(0);
     currentPoint=0;
@@ -490,10 +500,11 @@ void MainWindow::sl_set_next_point()
                 calibrationList[key].deviceList.push_back(device);
             }
             //Добавляем условия калибровки
-            calibrationList[key].conditions.insert("temperature",ed->getTemperature());
-            calibrationList[key].conditions.insert("pressure",ed->getPressure());
-            calibrationList[key].conditions.insert("humidity",ed->getHumidity());
-            calibrationList[key].conditions.insert("voltage",ed->getVoltage());
+            calibrationList[key].conditions = this->conditions;
+//            calibrationList[key].conditions.insert("temperature",ed->getTemperature());
+//            calibrationList[key].conditions.insert("pressure",ed->getPressure());
+//            calibrationList[key].conditions.insert("humidity",ed->getHumidity());
+//            calibrationList[key].conditions.insert("voltage",ed->getVoltage());
             //Добавляем методику калибровки
             calibrationList[key].calibrationInfo.insert("metod", "БГРЭС.АСУТП.МК 002-2016");
             //Добавляем уникальный ИД
@@ -590,9 +601,10 @@ void MainWindow::timer_overflow()
                     double neoprIzm = sqrt(koef*summa2);
                     pointList[tempChannel].calculations.insert("neoprIzm", QString::number(neoprIzm,'g',12));
                     //Основная неопределенность прибора
-                    pointList[tempChannel].calculations.insert("neoprEtOsn", QString::number(CPADriver->getIndeterminacyGeneral(10,mA)));
+                    pointList[tempChannel].calculations.insert("neoprEtOsn", QString::number(CPADriver->getIndeterminacyGeneral(points.at(currentPoint),measurementType)));
                     //Дополнительная неопределенность прибора
-                    pointList[tempChannel].calculations.insert("neoprEtDop", 0);
+                    QHash<QString, QString> tempConditions = currentPollList->at(i)->attr;
+                    pointList[tempChannel].calculations.insert("neoprEtDop", QString::number(CPADriver->getIndeterminacySecondary(points.at(currentPoint),measurementType, tempConditions)));
 
                 }
                // qDebug()<<key+ "-" + QString::number(currentPollList->at(i)->points.value(key));

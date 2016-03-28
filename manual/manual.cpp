@@ -100,3 +100,8 @@ measurement ManualPlugin::getMeasurenentType(QList<measurement> list)
 
 }
 
+bool ManualPlugin::checkConditions(QHash<QString, QString> conditions)
+{
+    return true;
+}
+

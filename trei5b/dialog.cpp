@@ -45,6 +45,7 @@ Dialog::Dialog(QWidget *parent) :
     adressValidator = new QRegExpValidator(adressRegExp);
     ui->adress->setValidator(adressValidator);
     //hasAcceptableForm();
+    this->setProperty("TK", "");
 }
 
 void Dialog::setModel(QAbstractItemModel *model)
@@ -67,8 +68,10 @@ void Dialog::setModel(QAbstractItemModel *model)
     dwm->addMapping(ui->point3, 12);
     dwm->addMapping(ui->point4, 13);
     dwm->addMapping(ui->TK, 14);
-    dwm->addMapping(ui->deltaP, 15);
-    dwm->addMapping(ui->note, 16);
+    dwm->addMapping(ui->pointTK, 15);
+    dwm->addMapping(ui->adj, 16);
+    dwm->addMapping(ui->deltaP, 17);
+    dwm->addMapping(ui->note, 18);
     dwm->setCurrentIndex(0);
 }
 
@@ -82,6 +85,13 @@ void Dialog::setSupportType(QStringList typeList)
     ui->type->clear();
     ui->type->addItem("");
     ui->type->addItems(typeList);
+}
+
+void Dialog::setTKLIst(QStringList TKList)
+{
+    ui->TK->clear();
+    ui->TK->addItem("");
+    ui->TK->addItems(TKList);
 }
 
 bool Dialog::hasAcceptableForm()

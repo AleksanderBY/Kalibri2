@@ -18,6 +18,9 @@ Trei::Trei()
     supportTypesList.append("M745A +-78mV/L");
     supportTypesList.append("M745A +-78mV/K");
     supportTypesList.append("M732U 100Om/50M");
+    supportTypesList.append("M745A 100Om/50M");
+    supportTypesList.append("M732U 200Om/50P");
+    supportTypesList.append("M745A 200Om/50P");
     dlg.setSupportType(supportTypesList);
     dlg.setModal(true);
 
@@ -30,6 +33,8 @@ QString Trei::getName()
 
 bool Trei::initialization(QAbstractItemModel *model)
 {
+    this->model = model;
+    //устанавливаем модель в диалоге редактора
     dlg.setModel(model);
     //инициализируем winsock
     WSAData wsadata;
@@ -217,7 +222,23 @@ QStringList *Trei::supportTypes()
 
 int Trei::editDialog(int row)
 {
+    //НЕОБХОДИМО УСТАНОВИТЬ СПИСОК КАНАЛОВ ТЕРМОКОМПЕНСАЦИИИ
+    int rowCount = model->rowCount();
+    QStringList TKList;
+    if (rowCount>0) {
+        for (int i=0; i<rowCount; i++) {
+            QModelIndex index = model->index(i,5);
+            QString tk = model->data(index, Qt::DisplayRole).toString();
+            if (tk=="M732U 100Om/50M"||tk=="M745A 100Om/50M"||tk=="M732U 200Om/50P"||tk=="M745A 200Om/50P") {
+                QString kodTK = model->data(model->index(i,1), Qt::DisplayRole).toString().rightJustified(2,'0')+model->data(model->index(i,2), Qt::DisplayRole).toString().rightJustified(2,'0');
+                TKList.append(kodTK);
+            }
+        }
+        dlg.setTKLIst(TKList);
+    }
+
     dlg.setRow(row);
+
     return dlg.exec();
 }
 
@@ -266,6 +287,8 @@ QList<double> Trei::getPoints(QList<PollClass *> *pollList)
             continue;
         }
 
+
+
         measurement measurementType = pollList->at(i)->measurementType;
         double EMin, EMax;
         switch (measurementType) {
@@ -302,6 +325,8 @@ QList<double> Trei::getPoints(QList<PollClass *> *pollList)
         case C50M1_426:
         case C100M1_428:
         case C100M1_426:
+        case C50P:
+        case C100P:
             for (int j=1; j<=4; j++) {
                 //Проверяем наличие поля тип измерительного канала
                 if (!pollList->at(i)->attr.contains("point"+QString::number(j))) {
@@ -318,19 +343,50 @@ QList<double> Trei::getPoints(QList<PollClass *> *pollList)
                 listPoint.push_back(PPoint);
             }
             break;
+        case Om:
+            if (mType== "M732U 100Om/50M"||mType=="M745A 100Om/50M"||mType=="M732U 200Om/50P"||mType == "M745A 200Om/50P") {
+                for (int j=1; j<=4; j++) {
+                    //Проверяем наличие поля тип измерительного канала
+                    if (!pollList->at(i)->attr.contains("point"+QString::number(j))) {
+                        qDebug()<<"Точка:"+QString::number(j)+" отсутствует";
+                        continue;
+                    }
+                    //Проверяем корректность поля точки канала
+                    double PPoint = pollList->at(i)->attr["point"+QString::number(j)].replace(',','.').toDouble(&ok);
+                    if (!ok) {
+                        qDebug()<<"Неправильное значение поля точки "+QString::number(j);
+                        continue;
+                    }
+                    int indexK;
+                    double EPoint;
+                    //Расчитываем сопротивление для медного термосопротивления 50М
+                    if (mType== "M732U 100Om/50M"||mType=="M745A 100Om/50M") {
+                        indexK = static_cast<int>(PPoint)+201;
+                        EPoint = K1428[indexK]*50;
+                    }
+                    //Расчитываем сопротивление для платинового термосопротивления 50П
+                    if (mType== "M732U 200Om/50P"||mType=="M745A 200Om/50P") {
+                        indexK = static_cast<int>(PPoint);
+                        EPoint = P1385[indexK]*50;
+                        qDebug()<<"Платиновый термометр, точка - " + QString::number(EPoint);
+                    }
+
+                    pollList->at(i)->points.insert(pollList->at(i)->attr.value("point"+QString::number(j)), EPoint);
+                    listPoint.push_back(EPoint);
+                }
+            }
+            break;
         default:
             break;
         }
 
-
-
         //Передаем в основную программу паузы между запросами
-        if (mType=="M745A 4-20mA"||mType== "M745A 0-5mA"||"M745A +-78mV/L") {
+        if (mType=="M745A 4-20mA"||mType== "M745A 0-5mA"||mType== "M745A +-78mV/L"||mType== "M745A 100Om/50M") {
             pollList->at(i)->startDelay = 3000;
             pollList->at(i)->delay = 3000;
         }
 
-        if (mType=="M732U 4-20mA"||mType== "M732U 0-5mA"||"M732U +-78mV/L") {
+        if (mType=="M732U 4-20mA"||mType== "M732U 0-5mA"||mType== "M732U +-78mV/L"||mType== "M732U 100Om/50M") {
             pollList->at(i)->startDelay = 1000;
             pollList->at(i)->delay = 1000;
         }
@@ -406,6 +462,7 @@ bool Trei::validationPollList(QList<PollClass *>  * pollList)
     for (int i=1; i<pollList->count();i++) {
         if (firstType!=pollList->at(i)->attr.value("type")) return false;
     }
+    //qDebug()<<"Валидация прошла успешно";
     return true;
 }
 //Получаем список поддерживаемых типов задатчиков
@@ -425,8 +482,12 @@ QList<measurement> Trei::getMeasurementTypes(QList<PollClass *> *pollList)
         list<<CTypeK;
         list<<mV;
     }
-    if (mType=="M732U 100Om/50M"){
+    if (mType=="M732U 100Om/50M"||mType=="M745A 100Om/50M"){
         list<<C50M1_428;
+        list<<Om;
+    }
+    if (mType=="M732U 200Om/50P"||mType=="M745A 200Om/50P"){
+        list<<C50P;
         list<<Om;
     }
 

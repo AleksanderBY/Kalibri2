@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>229</width>
-    <height>544</height>
+    <width>302</width>
+    <height>473</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,17 +17,21 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QLabel" name="l_controller">
-       <property name="text">
-        <string>Контроллер</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="controller"/>
-     </item>
-     <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_20">
+         <item>
+          <widget class="QLabel" name="l_controller">
+           <property name="text">
+            <string>Контроллер</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="controller"/>
+         </item>
+        </layout>
+       </item>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
@@ -59,6 +63,16 @@
       </layout>
      </item>
      <item>
+      <widget class="QLabel" name="l_name">
+       <property name="text">
+        <string>Название сигнала</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="name"/>
+     </item>
+     <item>
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -71,11 +85,11 @@
          </item>
          <item>
           <widget class="QLineEdit" name="cipher">
-           <property name="maximumSize">
-            <size>
-             <width>128</width>
-             <height>16777215</height>
-            </size>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
           </widget>
          </item>
@@ -96,16 +110,6 @@
         </layout>
        </item>
       </layout>
-     </item>
-     <item>
-      <widget class="QLabel" name="l_name">
-       <property name="text">
-        <string>Название сигнала</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="name"/>
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -137,16 +141,12 @@
          </item>
         </layout>
        </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_5">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_10">
+        <layout class="QVBoxLayout" name="verticalLayout_21">
          <item>
           <widget class="QLabel" name="l_unit">
            <property name="text">
-            <string>Единицы измерения</string>
+            <string>Ед. изм.</string>
            </property>
           </widget>
          </item>
@@ -156,11 +156,11 @@
         </layout>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_11">
+        <layout class="QVBoxLayout" name="verticalLayout_22">
          <item>
           <widget class="QLabel" name="l_adress">
            <property name="text">
-            <string>Адрес (тэг) опроса</string>
+            <string>Адрес опроса</string>
            </property>
           </widget>
          </item>
@@ -192,6 +192,10 @@
          <item>
           <widget class="QLineEdit" name="point1"/>
          </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_17">
          <item>
           <widget class="QLabel" name="l_poin3">
            <property name="text">
@@ -209,7 +213,7 @@
         </layout>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_13">
+        <layout class="QVBoxLayout" name="verticalLayout_18">
          <item>
           <widget class="QLabel" name="l_point2">
            <property name="text">
@@ -224,6 +228,10 @@
            </property>
           </widget>
          </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_13">
          <item>
           <widget class="QLabel" name="l_point4">
            <property name="text">
@@ -249,12 +257,12 @@
          <item>
           <widget class="QLabel" name="label">
            <property name="text">
-            <string>Канал ТК</string>
+            <string>Округление</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="TK"/>
+          <widget class="QLineEdit" name="adj"/>
          </item>
         </layout>
        </item>
@@ -269,6 +277,52 @@
          </item>
          <item>
           <widget class="QLineEdit" name="deltaP"/>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Термокомпенсация</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_8">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_16">
+         <item>
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>Точка</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="pointTK">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_15">
+         <item>
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Канал</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="TK"/>
          </item>
         </layout>
        </item>

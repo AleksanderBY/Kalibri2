@@ -20,6 +20,7 @@ public:
     void setModel(QAbstractItemModel * model);
     void setRow(int row);
     void setSupportType(QStringList typeList);
+    void setTKLIst(QStringList TKList);
     bool hasAcceptableForm();
     ~Dialog();
 

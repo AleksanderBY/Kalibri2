@@ -33,6 +33,7 @@ private:
     QVector<int> * socketList;
     QString lastError;
     QStringList supportTypesList;
+    QAbstractItemModel * model;
     Dialog  dlg;
     int createDevice(QString desk);
 

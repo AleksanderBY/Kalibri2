@@ -135,6 +135,7 @@ private:
     QMap<int, TCalibration> calibrationList;
     QMap<int, TPoint> pointList;
     int startDelay,delay;
+    QHash<QString, QString> conditions;  //Условия калибровки
 
     //------------- ADomCalicration------------------------
     ADomCalibration *dom;

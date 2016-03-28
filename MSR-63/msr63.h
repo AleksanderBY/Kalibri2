@@ -27,6 +27,7 @@ public:
     double getIndeterminacyGeneral(float value, measurement type_value) Q_DECL_OVERRIDE; //Получаем основную неопределенность прибора
     double getIndeterminacySecondary(float value, measurement type_value, QHash<QString, QString> conditions) Q_DECL_OVERRIDE; //Получаем дополнительную неопределенность прибора
     measurement getMeasurenentType(QList<measurement> list) Q_DECL_OVERRIDE;
+    bool checkConditions(QHash<QString, QString> conditions) Q_DECL_OVERRIDE;
 private:
     QSettings * settings;   //Ссылка хранилища настроек
     QString ZN;             //Заводской номер

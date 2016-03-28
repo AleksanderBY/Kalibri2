@@ -622,3 +622,23 @@ measurement Iksu2000Plugin::getMeasurenentType(QList<measurement> list)
     return notSupport;
 }
 
+bool Iksu2000Plugin::checkConditions(QHash<QString, QString> conditions)
+{
+    //Проверяем условия окружаующей среды на соответствие условиям эксплуатации прибора
+    //температура от 15 до 30
+    bool ok;
+    //Температура
+    if (conditions.contains("temperature")) {
+        float temperature = conditions.value("temperature").toFloat(&ok);
+        if (!ok) {
+            emit this->log("ИКСУ-2000: Неверное содержание поля \"температура\"", Qt::yellow);
+            return false;
+        }
+        if (temperature>40||temperature<5) {
+            emit this->log("ИКСУ-2000: Температура выходит за пределы допустимой", Qt::yellow);
+            return false;
+        }
+    }
+    return true;
+}
+

@@ -37,7 +37,8 @@ HEADERS  += mainwindow.h \
     axmlcalibrationmodel.h \
     environmentdialog.h \
     #aenvironment.h \
-    measurement.h
+    measurement.h \
+    calibrationdata.h
 
 FORMS    += mainwindow.ui \
     settingsdialog.ui \

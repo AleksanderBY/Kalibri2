@@ -23,6 +23,7 @@ public:
     virtual double getIndeterminacySecondary(float value, measurement type_value, QHash<QString, QString> conditions) = 0; //Получаем дополнительную неопределенность прибора
     virtual bool setup() = 0;
     virtual measurement getMeasurenentType(QList<measurement> list) = 0;
+    virtual bool checkConditions(QHash<QString, QString> conditions) = 0;
 signals:
     virtual void set_value_ok() = 0;    //Высылать когда значение успешно установлено
     virtual void set_value_error() = 0; //Высылать в случае ошибки установки значения

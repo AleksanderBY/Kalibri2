@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Настройка МСР-63</string>
+   <string>Магазин сопротивлений МСР-63</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
