@@ -54,6 +54,8 @@ public:
     double getIndeterminacySecondary(float value, measurement type_value, QHash<QString, QString> conditions) Q_DECL_OVERRIDE; //Получаем дополнительную неопределенность прибора
     measurement getMeasurenentType(QList<measurement> list) Q_DECL_OVERRIDE;
     bool checkConditions(QHash<QString, QString> conditions) Q_DECL_OVERRIDE;
+    double getErrorGeneral(float value, measurement type_value) Q_DECL_OVERRIDE; //Погрешность прибора основная
+    double getErrorSecondary(float value, measurement type_value, QHash<QString, QString> conditions) Q_DECL_OVERRIDE; //Погрешность прибора дополнительная
 private:
     QSerialPort * serial;   //Порт-опроса
     QString portName;       //Название порта

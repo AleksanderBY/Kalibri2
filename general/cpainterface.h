@@ -19,6 +19,8 @@ public:
     virtual int showInfo() = 0;
     virtual void test() = 0;
     virtual bool setValue(float value, measurement type_value) = 0; //запрос на установление значения
+    virtual double getErrorGeneral(float value, measurement type_value) = 0; //Погрешность прибора основная
+    virtual double getErrorSecondary(float value, measurement type_value, QHash<QString, QString> conditions) = 0; //Погрешность прибора дополнительная
     virtual double getIndeterminacyGeneral(float value, measurement type_value) = 0; //Получаем основную неопределенность прибора
     virtual double getIndeterminacySecondary(float value, measurement type_value, QHash<QString, QString> conditions) = 0; //Получаем дополнительную неопределенность прибора
     virtual bool setup() = 0;

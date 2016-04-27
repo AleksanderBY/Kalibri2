@@ -12,6 +12,7 @@ public:
     QHash<QString, QString> pointInfo;                  //Информация о точке калибровки
     QHash<QString, QString> results;                    //Результаты калибровки
     QHash<QString, QString> calculations;               //Расчеты для калибровки
+    QHash<QString, QString> temp;                       //Временные данные
 };
 //Все результаты калибровки
 class TCalibration {
@@ -25,6 +26,9 @@ public:
 class TChannelCalibration {
 public:
     QHash<QString, QString> channelInfo;                //Информация о канале
+    QHash<QString, double> tempPoint;                   //Временные данные
+    int startDelay, delay;
+    QHash<QString, QString> temp;
     QVector<TCalibration> CalibtationList;              //Список всех проеведенных калибровок
 };
 

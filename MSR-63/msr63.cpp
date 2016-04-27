@@ -101,7 +101,6 @@ QString MSR63Plugin::getSROK()
 double MSR63Plugin::getIndeterminacyGeneral(float value, measurement type_value)
 {
     double delta = (0.05+0.000004*(111111.1/value-1))*value/100/sqrt(3.0);
-    qDebug()<<"Основная погрешность-"+QString::number(delta);
     return delta;
 }
 
@@ -157,4 +156,23 @@ bool MSR63Plugin::checkConditions(QHash<QString, QString> conditions)
         }
     }
     return true;
+}
+
+double MSR63Plugin::getErrorGeneral(float value, measurement type_value)
+{
+    double delta = (0.05+0.000004*(111111.1/value-1))*value/100;
+    return delta;
+}
+
+double MSR63Plugin::getErrorSecondary(float value, measurement type_value, QHash<QString, QString> conditions)
+{
+    float temperature = conditions.value("temperature").toFloat();
+    double delta = (0.025+0.000004*(111111.1/value-1))*value/100;
+    if (temperature>=18&&temperature<=22) {
+        return 0;
+    }
+    if (temperature<18||(temperature>22&&temperature<=25)) {
+        return delta;
+    }
+    return 2*delta;
 }

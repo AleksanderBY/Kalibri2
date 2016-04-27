@@ -3,7 +3,41 @@
 
 enum measurement {notSupport, mA, mV, V, Om, C100M1_426, C100M1_428, C50M1_426, C50M1_428, C50P, C100P, CPt100IEC385, CTypeJ, CTypeK, CTypeB, CTypeA1, CTypeS, CTypeXK };
 
-const double A428 = 3.9083e-3;
+const double aM428 = 4.28e-3;
+const double AM428 = 4.2775e-3;
+const double BM428 = -5.4136e-7;
+const double CM428 = 9.8265e-10;
+
+const double AP385 = 3.9083e-3;
+const double BP385 = -5.775e-7;
+const double CP385 = -4.183e-12;
+
+class OmToC {
+public:
+    static double getTSM428(double nomTS, double t)
+    {
+        if (t<-185) {
+            return nomTS*(1+AM428*(t-13.7));
+        }
+        if (t<-100) {
+            return nomTS*(1+aM428*t+BM428*t*(t-10)+CM428*t*t*t);
+        }
+        if (t<-10) {
+            return nomTS*(1+aM428*t+BM428*t*(t-10));
+        }
+        return nomTS*(1+aM428*t);
+    }
+    //Rt = R0[1 + At + Bt2 + С(t – 100 °C) t3].
+    //Rt = R0(1 + At + Bt2),
+    static double getTSP385(double nomTS, double t)
+    {
+        if (t<0) {
+            return nomTS*(1+AP385*t+BP385*t*t+CP385*(t-100)*t*t*t);
+        }
+        return nomTS*(1+AP385*t+BP385*t*t);
+    }
+};
+
 
 //Таблица коэффициентов для медных ТС 1.428
 const double K1428[] = {0.1217,

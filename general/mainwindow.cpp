@@ -12,6 +12,8 @@
 #include <math.h>
 #include <QUuid>
 #include <QDateTime>
+#include "mustache.h"
+
 
 
 
@@ -86,10 +88,6 @@ MainWindow::MainWindow(QWidget *parent) :
     CPAActionGroup->setExclusive(true);
     //Добавляем группу в меню
     this->ui->menu_3->addActions(CPAActionGroup->actions());
-    //Инициализируем список каналов выбранных для калибровки
-    pollList = new QList<PollClass*>;
-    currentPollList = new QList<PollClass*>;
-
 
     //Настраиваем таблицы
     ui->tableView->verticalHeader()->setDefaultSectionSize(ui->tableView->verticalHeader()->minimumSectionSize());
@@ -176,6 +174,12 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ed = new EnvironmentDialog(this->settings);
     ed->setModal(true);
     ui->progressBar->setValue(0);
+
+    this->calibrationDom = new QVector<TChannelCalibration*>;
+    this->currentCalibrationDom = new QVector<TChannelCalibration*>;
+
+    connect(this, SIGNAL(get_next_values()),this->XMLResultsModel, SLOT(model_reset()));
+
 
 //    qDebug()<<"Создание основного окна";
 }
@@ -387,34 +391,33 @@ void MainWindow::on_pushButton_2_clicked()
         this->logger->log("Не пройден контроль условий эксплуатации эталона "+CPADriver->getName(), Qt::red);
         return;
     }
-    //Очищаем список каналов от данных преведущей калибровки
-    pollList->clear();
     //Очищаем список калибровок
-    calibrationList.clear();
+    calibrationDom->clear();
     //Определяем список индексов каналов калибровки
     QModelIndexList calibrateIDList = ui->tableView->selectionModel()->selectedRows();
     //Формируем Структуру для запроса калибровки
     foreach (QModelIndex index, calibrateIDList) {
-        //Создаем запрос для канала
-        PollClass * poll = new PollClass();
-        //Получаем атрибуты канала
-        QHash<QString, QString> attr = dom->tChannelList[index.row()].channelInfo;
-        //добавляем в номер канала выбранного для калибровки
-        attr.insert("num", QString::number(index.row()));
-        //Записываем атрибуты в запрос
-        poll->attr = attr;
-        //Добавляем запрос канала в список запросов
-        pollList->push_back(poll);
-        //создаем заготовки для результатов калибровки
-        this->calibrationList.insert(index.row(), TCalibration());
+        //Формируем экземпляр дома для калибровки
+        calibrationDom->append(&dom->tChannelList[index.row()]);
+        TCalibration newCalibration;
+        newCalibration.calibrationInfo.insert("position", setting->getPosition());
+        newCalibration.calibrationInfo.insert("FIO", setting->getFIO());
+        newCalibration.calibrationInfo.insert("metod", "БГРЭС.АСУТП.МК 002-2016");
+        QDateTime dt = QDateTime::currentDateTime();
+        newCalibration.calibrationInfo.insert("date", dt.date().toString("dd.MM.yyyy"));
+        newCalibration.calibrationInfo.insert("time", dt.time().toString());
+        newCalibration.calibrationInfo.insert("uuid", QUuid::createUuid().toString());
+        newCalibration.conditions = conditions;
+        calibrationDom->last()->CalibtationList.push_back(newCalibration);
      }
+    qDebug()<< calibrationDom->at(0)->CalibtationList.count();
     //Проверяем возможность совместной калибровки каналов
-    if (!this->connectDriver->validationPollList(pollList)) {
+    if (!this->connectDriver->validationPollList(calibrationDom)) {
         this->logger->log("Несовместимые типы измерительных каналов", Qt::red);
         return;
     }
     //Получаем список поддерживаемы задатчиков
-    QList<measurement> measurementTypeList = this->connectDriver->getMeasurementTypes(pollList);
+    QList<measurement> measurementTypeList = this->connectDriver->getMeasurementTypes(calibrationDom);
     if (measurementTypeList.count()<=0) {
         this->logger->log("Ошибка: список задатчиков пуст", Qt::red);
         return;
@@ -425,23 +428,19 @@ void MainWindow::on_pushButton_2_clicked()
         this->logger->log("Задатчик не поддерживает требуемый тип" , Qt::red);
         return;
     }
-    //Добавляем тип измерения в запросы
-    for (int i=0; i<pollList->count(); i++) {
-        pollList->at(i)->measurementType = this->measurementType;
-    }
 
     //Получаем список уникальных точек калибровки для всех каналов
     points.clear();
 
-    points = this->connectDriver->getPoints(pollList);
+    points = this->connectDriver->getPoints(calibrationDom, this->measurementType);
 
     if (points.count()<=0) {
         this->logger->log("Нет заданных точек для калибровки", Qt::yellow);
         return;
     }
     //Получаем значения задержек из первого канала
-    startDelay = pollList->at(0)->startDelay;
-    delay = pollList->at(0)->delay;
+    startDelay = calibrationDom->at(0)->startDelay;
+    delay = calibrationDom->at(0)->delay;
     qDebug()<<"Задержка"+QString::number(delay);
     qDebug()<<"количество точек калибровки " + QString::number(points.count());
     ui->progressBar->setMaximum(points.count()*10);
@@ -455,61 +454,48 @@ void MainWindow::on_pushButton_2_clicked()
 void MainWindow::sl_set_next_point()
 {
     if (currentPoint>=points.count()) {
-        foreach (int key, calibrationList.keys()) {
-            //Добавляем калибровщика
-            calibrationList[key].calibrationInfo.insert("position", setting->getPosition());
-            calibrationList[key].calibrationInfo.insert("FIO", setting->getFIO());
-            //Добавляем данные приборов
-            TDevice device;
-            device.deviceInfo.insert("Type", CPADriver->getType());
-            device.deviceInfo.insert("SN", CPADriver->getSN());
-            device.deviceInfo.insert("SKN", CPADriver->getSKN());
-            device.deviceInfo.insert("SROK", CPADriver->getSROK());
-            device.deviceInfo.insert("role", "general");
-            calibrationList[key].deviceList.push_back(device);
-            if (ed->getInReportTemperature()) {
-                device.deviceInfo.insert("Type", ed->getTemperatureDeviceType());
-                device.deviceInfo.insert("SN", ed->getTemperatureDeviceZN());
-                device.deviceInfo.insert("SKN", ed->getTemperatureDeviceSKN());
-                device.deviceInfo.insert("SROK", ed->getTemperatureDeviceSROK().toString("dd.MM.yyyy"));
-                device.deviceInfo.insert("role", "secondary");
-                calibrationList[key].deviceList.push_back(device);
-            }
-            if (ed->getInReportHumidity()) {
-                device.deviceInfo.insert("Type", ed->getHumidityDeviceType());
-                device.deviceInfo.insert("SN", ed->getHumidityDeviceZN());
-                device.deviceInfo.insert("SKN", ed->getHumidityDeviceSKN());
-                device.deviceInfo.insert("SROK", ed->getHumidityDeviceSROK().toString("dd.MM.yyyy"));
-                device.deviceInfo.insert("role", "secondary");
-                calibrationList[key].deviceList.push_back(device);
-            }
-            if (ed->getInReportPressure()) {
-                device.deviceInfo.insert("Type", ed->getPressureDeviceType());
-                device.deviceInfo.insert("SN", ed->getPressureDeviceZN());
-                device.deviceInfo.insert("SKN", ed->getPressureDeviceSKN());
-                device.deviceInfo.insert("SROK", ed->getPressureDeviceSROK().toString("dd.MM.yyyy"));
-                device.deviceInfo.insert("role", "secondary");
-                calibrationList[key].deviceList.push_back(device);
-            }
-            if (ed->getInReportVoltage()) {
-                device.deviceInfo.insert("Type", ed->getVoltageDeviceType());
-                device.deviceInfo.insert("SN", ed->getVoltageDeviceZN());
-                device.deviceInfo.insert("SKN", ed->getVoltageDeviceSKN());
-                device.deviceInfo.insert("SROK", ed->getVoltageDeviceSROK().toString("dd.MM.yyyy"));
-                device.deviceInfo.insert("role", "secondary");
-                calibrationList[key].deviceList.push_back(device);
-            }
-            //Добавляем условия калибровки
-            calibrationList[key].conditions = this->conditions;
-//            calibrationList[key].conditions.insert("temperature",ed->getTemperature());
-//            calibrationList[key].conditions.insert("pressure",ed->getPressure());
-//            calibrationList[key].conditions.insert("humidity",ed->getHumidity());
-//            calibrationList[key].conditions.insert("voltage",ed->getVoltage());
-            //Добавляем методику калибровки
-            calibrationList[key].calibrationInfo.insert("metod", "БГРЭС.АСУТП.МК 002-2016");
-            //Добавляем уникальный ИД
-            calibrationList[key].calibrationInfo.insert("uuid", QUuid::createUuid().toString());
-            dom->tChannelList[key].CalibtationList.push_back(calibrationList.value(key));
+        QVector<TDevice> deviceList;
+        TDevice device;
+        device.deviceInfo.insert("Type", CPADriver->getType());
+        device.deviceInfo.insert("SN", CPADriver->getSN());
+        device.deviceInfo.insert("SKN", CPADriver->getSKN());
+        device.deviceInfo.insert("SROK", CPADriver->getSROK());
+        device.deviceInfo.insert("role", "general");
+        deviceList.push_back(device);
+        if (ed->getInReportTemperature()) {
+            device.deviceInfo.insert("Type", ed->getTemperatureDeviceType());
+            device.deviceInfo.insert("SN", ed->getTemperatureDeviceZN());
+            device.deviceInfo.insert("SKN", ed->getTemperatureDeviceSKN());
+            device.deviceInfo.insert("SROK", ed->getTemperatureDeviceSROK().toString("dd.MM.yyyy"));
+            device.deviceInfo.insert("role", "secondary");
+            deviceList.push_back(device);
+        }
+        if (ed->getInReportHumidity()) {
+            device.deviceInfo.insert("Type", ed->getHumidityDeviceType());
+            device.deviceInfo.insert("SN", ed->getHumidityDeviceZN());
+            device.deviceInfo.insert("SKN", ed->getHumidityDeviceSKN());
+            device.deviceInfo.insert("SROK", ed->getHumidityDeviceSROK().toString("dd.MM.yyyy"));
+            device.deviceInfo.insert("role", "secondary");
+            deviceList.push_back(device);
+        }
+        if (ed->getInReportPressure()) {
+            device.deviceInfo.insert("Type", ed->getPressureDeviceType());
+            device.deviceInfo.insert("SN", ed->getPressureDeviceZN());
+            device.deviceInfo.insert("SKN", ed->getPressureDeviceSKN());
+            device.deviceInfo.insert("SROK", ed->getPressureDeviceSROK().toString("dd.MM.yyyy"));
+            device.deviceInfo.insert("role", "secondary");
+            deviceList.push_back(device);
+        }
+        if (ed->getInReportVoltage()) {
+            device.deviceInfo.insert("Type", ed->getVoltageDeviceType());
+            device.deviceInfo.insert("SN", ed->getVoltageDeviceZN());
+            device.deviceInfo.insert("SKN", ed->getVoltageDeviceSKN());
+            device.deviceInfo.insert("SROK", ed->getVoltageDeviceSROK().toString("dd.MM.yyyy"));
+            device.deviceInfo.insert("role", "secondary");
+            deviceList.push_back(device);
+        }
+        for (int i=0; i<calibrationDom->count();i++) {
+            calibrationDom->at(i)->CalibtationList.last().deviceList = deviceList;
         }
         QMediaPlayer * mp3 = new QMediaPlayer();
         mp3->setMedia(QUrl::fromLocalFile("end.mp3"));
@@ -518,20 +504,21 @@ void MainWindow::sl_set_next_point()
         logger->log("Калибровка успешно завершена", Qt::green);
         return;
     }
-    //Формируем список подписчиков на точку
-    currentPollList->clear();
-    //очищаем список точек
-    pointList.clear();
-    for (int i=0;i<pollList->count(); i++) {
-        foreach (QString key, pollList->at(i)->points.keys()) {
-            if (points.at(currentPoint)==pollList->at(i)->points.value(key)) {
-                currentPollList->push_back(pollList->at(i));
-                pointList.insert(pollList->at(i)->attr.value("num").toInt(), TPoint());
-            }
 
+    //Формируем список подписчиков на точку
+    currentCalibrationDom->clear();
+    TPoint newPoint;
+    for (int i=0; i<calibrationDom->count(); i++) {
+        foreach (QString key, calibrationDom->at(i)->tempPoint.keys()) {
+            if (points.at(currentPoint)==calibrationDom->at(i)->tempPoint.value(key)) {
+                newPoint.pointInfo.insert("value", key);
+                newPoint.pointInfo.insert("uuid", QUuid::createUuid().toString());
+                calibrationDom->at(i)->CalibtationList.last().pointList.append(newPoint);
+                currentCalibrationDom->push_back(calibrationDom->at(i));
+            }
         }
     }
-    qDebug()<<"Подписано: "+QString::number(currentPollList->count())+" каналов";
+    qDebug()<<"Подписано: "+QString::number(currentCalibrationDom->count())+" каналов";
 
     this->logger->log("Устанавливаем на задатчике точку: "+QString::number(points.at(currentPoint)));
     qDebug()<<startDelay;
@@ -546,7 +533,7 @@ void MainWindow::sl_end_set_value()
 {  
     this->measurement1 = 1;
     ui->progressBar->setValue(currentPoint*10+measurement1);
-    this->timer->setInterval(delay);
+    this->timer->setInterval(startDelay);
     this->timer->start();
 }
 
@@ -555,71 +542,47 @@ void MainWindow::timer_overflow()
     ui->progressBar->setValue(currentPoint*10+measurement1);
     if (measurement1<=10) {
         logger->log("Получаем значения №"+QString::number(measurement1));
-        if (connectDriver->getValues(currentPollList)) {
-            for (int i=0; i<currentPollList->count(); i++) {
-                int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
-                pointList[tempChannel].results.insert("V"+QString::number(measurement1),QString::number(currentPollList->at(i)->value));
-                //resultCalibrationList.value(tempChannel)->addResult("V"+QString::number(measurement1), QString::number(currentPollList->at(i)->value));
-                qDebug()<<currentPollList->at(i)->value;
-            }
+        if (connectDriver->getValues(currentCalibrationDom)) {
+
         }
         measurement1++;
+        this->timer->setInterval(delay);
     }
     else {
         logger->log("Калибровка точки завершена");
         this->timer->stop();
-        QDateTime dt = QDateTime::currentDateTime();
-        for (int i=0; i<currentPollList->count(); i++) {
-
-            foreach (QString key, currentPollList->at(i)->points.keys()) {
-                if (points.at(currentPoint)==currentPollList->at(i)->points.value(key)) {
-                    int tempChannel = currentPollList->at(i)->attr.value("num").toInt();
-                    //добавляем значение точки
-                    pointList[tempChannel].pointInfo.insert("value", key);
-                    //добавляем уникальный ИД для измерения
-                    pointList[tempChannel].pointInfo.insert("uuid", QUuid::createUuid().toString());
-                    //**********************************************//
-                    //          Добавляем результаты                //
-                    //**********************************************//
-                    double summa = 0;
-                    QList<double> p;
-                    foreach (QString key, pointList[tempChannel].results.keys()) {
-                        p.push_back(pointList[tempChannel].results[key].toDouble());
-                        summa += p.last();
-                    }
-                    int n=p.count();
-                    double av = summa/n;
-                    pointList[tempChannel].calculations.insert("av", QString::number(av,'g',12));
-                    double delta = pointList[tempChannel].pointInfo.value("value").toDouble()-av;
-                    pointList[tempChannel].calculations.insert("delta", QString::number(delta,'g',12));
-                    //Вычисляем неопределенность измерения
-                    double summa2=0;
-                    foreach (double p_i, p) {
-                        summa2 += pow(p_i-av, 2);
-                    }
-                    double koef = 1.0/(n*(n-1));
-                    double neoprIzm = sqrt(koef*summa2);
-                    pointList[tempChannel].calculations.insert("neoprIzm", QString::number(neoprIzm,'g',12));
-                    //Основная неопределенность прибора
-                    pointList[tempChannel].calculations.insert("neoprEtOsn", QString::number(CPADriver->getIndeterminacyGeneral(points.at(currentPoint),measurementType)));
-                    //Дополнительная неопределенность прибора
-                    QHash<QString, QString> tempConditions = currentPollList->at(i)->attr;
-                    pointList[tempChannel].calculations.insert("neoprEtDop", QString::number(CPADriver->getIndeterminacySecondary(points.at(currentPoint),measurementType, tempConditions)));
-
-                }
-               // qDebug()<<key+ "-" + QString::number(currentPollList->at(i)->points.value(key));
+        for (int i=0; i<currentCalibrationDom->count(); i++) {
+            //**********************************************//
+            //          Добавляем результаты                //
+            //**********************************************//
+            double summa = 0;
+            QList<double> p;
+            foreach (QString key, currentCalibrationDom->at(i)->CalibtationList.last().pointList.last().results.keys()) {
+                p.push_back(currentCalibrationDom->at(i)->CalibtationList.last().pointList.last().results.value(key).toDouble());
+                summa += p.last();
             }
-
+            int n=p.count();
+            double av = summa/n;
+            currentCalibrationDom->at(i)->CalibtationList.last().pointList.last().calculations.insert("av", QString::number(av,'g',12));
+            double delta = currentCalibrationDom->at(i)->CalibtationList.last().pointList.last().pointInfo.value("value").toDouble()-av;
+            currentCalibrationDom->at(i)->CalibtationList.last().pointList.last().calculations.insert("delta", QString::number(delta,'g',12));
+            //Вычисляем неопределенность измерения
+            double summa2=0;
+            foreach (double p_i, p) {
+                summa2 += pow(p_i-av, 2);
+            }
+            double koef = 1.0/(n*(n-1));
+            double neoprIzm = sqrt(koef*summa2);
+            currentCalibrationDom->at(i)->CalibtationList.last().pointList.last().calculations.insert("neoprIzm", QString::number(neoprIzm,'g',12));
+            //Основная неопределенность прибора
+            currentCalibrationDom->at(i)->CalibtationList.last().pointList.last().calculations.insert("neoprEtOsn", QString::number(CPADriver->getIndeterminacyGeneral(points.at(currentPoint),measurementType)));
+            //Дополнительная неопределенность прибора
+            currentCalibrationDom->at(i)->CalibtationList.last().pointList.last().calculations.insert("neoprEtDop", QString::number(CPADriver->getIndeterminacySecondary(points.at(currentPoint),measurementType, this->conditions)));
         }
-        foreach (int key, pointList.keys()) {
-            calibrationList[key].pointList.push_back(pointList.value(key));
-            calibrationList[key].calibrationInfo.insert("date", dt.date().toString("dd.MM.yyyy"));
-            calibrationList[key].calibrationInfo.insert("time", dt.time().toString());
-        }
-
         currentPoint++;
         emit this->end_calibration_next_point();
     }
+    XMLResultsModel->model_reset();
 }
 
 void MainWindow::delayTimer_overflow()
@@ -742,24 +705,82 @@ void MainWindow::on_saveAction_triggered()
 //кнопка для тестов
 void MainWindow::on_pushButton_3_clicked()
 {
-    TChannelCalibration channel;
-    TCalibration calibration;
-    TPoint point;
-    if (dom->tChannelList.count()>0)
-        for (int i=0; i<dom->tChannelList.count();i++) {
-            channel=dom->tChannelList[i];
-            for (int j=0;j<channel.CalibtationList.count();j++) {
-                calibration = channel.CalibtationList[j];
-                for (int ci=0; ci<calibration.pointList.count();ci++) {
-                    point = calibration.pointList[ci];
-                    dom->tChannelList[i].CalibtationList[j].pointList[ci].calculations.clear();
-                    dom->tChannelList[i].CalibtationList[j].pointList[ci].results.remove("av");
-                    dom->tChannelList[i].CalibtationList[j].pointList[ci].results.remove("delta");
-                    dom->tChannelList[i].CalibtationList[j].pointList[ci].results.remove("neoprIzm");
-                }
+    //карта данных для шаблона
+    QVariantHash map;
 
-            }
+    int index_ = ui->tableView->selectionModel()->currentIndex().row();
+    QVariantHash channalInfo;
+    foreach (QString key, dom->tChannelList.at(index_).channelInfo.keys()) {
+        channalInfo[key] = dom->tChannelList.at(index_).channelInfo[key];
+    }
+    map["channalInfo"] = channalInfo;
+    QVariantHash conditions;
+    foreach (QString key, dom->tChannelList.at(index_).CalibtationList.last().conditions.keys()) {
+        conditions[key] = dom->tChannelList.at(index_).CalibtationList.last().conditions.value(key);
+    }
+    map["conditions"] = conditions;
+
+    QVariantList deviceList;
+    QVariantHash deviceMeasurment;
+    for (int i=0;i<dom->tChannelList.at(index_).CalibtationList.last().deviceList.count();i++) {
+        foreach (QString key, dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.keys()) {
+            deviceMeasurment[key] = dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value(key);
         }
+        deviceList<<deviceMeasurment;
+    }
+    map["devices"] = deviceList;
+
+    QVariantHash calibrationInfo;
+    foreach (QString key, dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.keys()) {
+        calibrationInfo[key] = dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value(key);
+    }
+    map["calibrationInfo"] = calibrationInfo;
+
+
+    QVariantList pointList;
+    QVariantHash pointInfo;
+    QVariantHash results;
+    for (int i=0;i<dom->tChannelList.at(index_).CalibtationList.last().pointList.count();i++) {
+        foreach (QString key, dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).pointInfo.keys()) {
+            pointInfo[key] = dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).pointInfo.value(key);
+        }
+        pointList<<deviceMeasurment;
+    }
+    map["devices"] = deviceList;
+
+
+
+//    QVariantList calibration;
+//    calibration["info"] = dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo;
+//    calibration["conditions"] = dom->tChannelList.at(index_).CalibtationList.last().conditions;
+//    for (int i=0; i<dom->tChannelList.at(index_).CalibtationList.count();i++)
+//    {
+//        QVariantList pointList;
+//        QVariantHash pointInfo = dom->tChannelList.at(index_).CalibtationList.at(i).pointList.at(j).pointInfo;
+//    }
+
+    QTextDocument doc;
+    QFile f1("temp.html");
+    f1.open(QIODevice::ReadOnly);
+
+    QTextStream stream(&f1);
+
+    QString renderTemplate = stream.readAll();
+
+    Mustache::Renderer renderer;
+
+    Mustache::QtVariantContext context(map);
+
+    QString str = renderer.render(renderTemplate, &context);
+
+    qDebug()<<str;
+    doc.setHtml(str);
+
+    QPrinter printer;
+    printer.setOutputFileName("temp.pdf");
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    doc.print(&printer);
+    printer.newPage();
 }
 
 void MainWindow::on_saveAsAction_triggered()
@@ -780,31 +801,185 @@ void MainWindow::on_deleteAll_triggered()
 void MainWindow::on_pushButton_4_clicked()
 {
     QTextDocument doc;
-    QFile tempFile;
+//    QFile tempFile;
+//    QString str;
+//    QRegExp regExp("([{]{2,2})(.*)([}]{2,2})");
+//    regExp.setMinimal(true);
+//    tempFile.setFileName("trei5b-02_1.txt");
+//    if (tempFile.open(QFile::ReadOnly)) {
+//        QTextStream textStream(&tempFile);
+//        qDebug()<<"файл открыт";
+
+//        str =textStream.readAll();
+//    }
+//    int pos=0;
+
+//    tempFile.close();
+//    QStringList list;
+//    while ((pos=regExp.indexIn(str, pos)) !=-1) {
+//        list<<regExp.cap(0);
+//        pos+=regExp.matchedLength();
+//        qDebug()<<list.last();
+//    }
+//    qDebug()<<list.count();
+    int index_ = ui->tableView->selectionModel()->currentIndex().row();
     QString str;
-    QRegExp regExp("([{]{2,2})(.*)([}]{2,2})");
-    regExp.setMinimal(true);
-    tempFile.setFileName("trei5b-02_1.txt");
-    if (tempFile.open(QFile::ReadOnly)) {
-        QTextStream textStream(&tempFile);
-        qDebug()<<"файл открыт";
+    str.append("<h1 align=\"center\">Протокол калибровки</h1>");
+    //str.append(QChar(581));
+    qDebug()<<index_;
+    str.append("<h2>№1 от 05.04.2016</h2>");
+    str.append("<h2 align=\"center\">Измерительного канала:</h2>");
+    str.append("<h2>"); str.append(dom->tChannelList.at(index_).channelInfo.value("cipher")+"   "+dom->tChannelList.at(index_).channelInfo.value("name"));str.append("</h2>");
+    str.append("<h2>Контроллер "); str.append(dom->tChannelList.at(index_).channelInfo.value("controller")+" Модуль "+dom->tChannelList.at(index_).channelInfo.value("module")+ " Канал "+ dom->tChannelList.at(index_).channelInfo.value("pipe"));str.append("</h2>");
+    str.append("<h2>Методика калибровки: "); str.append(dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value("metod"));str.append("</h2>");
+    str.append("<h2>Условия проведения калибровки: </h2>");
+    //Формируем таблицу условий проведения калибровки
+    str.append("<table border=\"1\" style = \"border-style:solid; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px;\" cellspacing=\"0\" cellpadding=\"0\" width =\"100%\"><tr style = \"margin-top:2px; margin-bottom:2px; margin-left:2px; margin-right:2px;\">");
+    str.append("<td align=\"center\">Температура, "); str.append(QChar(8451)); str.append("</td>");
+    str.append("<td align=\"center\">Влажность, %</td>");
+    str.append("<td align=\"center\">Давление, кПа</td>");
+    str.append("<td align=\"center\">Напряжение питания, В</td>");
+    str.append("</tr>");
+    str.append("<tr>");
+    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("temperature")+"</td>");
+    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("humidity")+"</td>");
+    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("pressure")+"</td>");
+    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("voltage")+"</td>");
+    str.append("</tr></table>");
 
-        str =textStream.readAll();
+    str.append("<h2>Образцовые и вспомогательные СИ, применяемые при проведении калибровки: </h2>");
+    str.append("<table border=\"1\" style = \"border-style:solid; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px;\" cellspacing=\"0\" cellpadding=\"0\" width =\"100%\">");
+    str.append("<tr>");
+    str.append("<td align=\"center\">Средство измерения</td>");
+    str.append("<td align=\"center\">Заводской №</td>");
+    str.append("<td align=\"center\">Свидетельство №</td>");
+    str.append("<td align=\"center\">Действительно до</td>");
+    str.append("</tr>");
+    for (int i=0;i<dom->tChannelList.at(index_).CalibtationList.last().deviceList.count(); i++)
+    {
+        str.append("<tr>");
+        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("Type")+"</td>");
+        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("SN")+"</td>");
+        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("SKN")+"</td>");
+        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("SROK")+"</td>");
+        str.append("</tr>");
     }
-    int pos=0;
+    str.append("</table>");
 
-    tempFile.close();
-    QStringList list;
-    while ((pos=regExp.indexIn(str, pos)) !=-1) {
-        list<<regExp.cap(0);
-        pos+=regExp.matchedLength();
-        qDebug()<<list.last();
+    str.append("<h2>Результаты измерений:</h2>");
+    str.append("<table border=\"1\" style = \"border-style:solid; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px;\" cellspacing=\"0\" cellpadding=\"0\" width =\"100%\">");
+    str.append("<tr>");
+    str.append("<td>Внешний осмотр</td>");
+    str.append("<td>Годен</td>");
+    str.append("</tr>");
+    str.append("<tr>");
+    str.append("<td>Проверка функционирования</td>");
+    str.append("<td>Годен</td>");
+    str.append("</tr>");
+    str.append("<tr>");
+    str.append("<td>Определение метрологических характеристик</td>");
+    str.append("<td>см. последующие страницы протокола</td>");
+    str.append("</tr>");
+    str.append("<tr>");
+    str.append("<td>Результаты измерений</td>");
+    str.append("<td>см. последующие страницы протокола</td>");
+    str.append("</tr>");
+    str.append("</table>");
+
+    str.append("<h2/>");
+
+    str.append("<table border=\"1\" style = \"border-style:solid; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px;\" cellspacing=\"0\" cellpadding=\"0\" width =\"100%\">");
+    str.append("<tr>");
+    str.append("<td>Калибровку выполнил</td>");
+    str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value("position")+ " "+dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value("FIO")+"</td>");
+    str.append("</tr>");
+    str.append("<tr>");
+    str.append("<td>Подпись</td>");
+    str.append("<td></td>");
+    str.append("</tr>");
+    str.append("<tr>");
+    str.append("<td>Дата</td>");
+    str.append("<td>"+QDateTime::currentDateTime().toString() +"</td>");
+    str.append("</tr>");
+    str.append("</table>");
+
+    str.append("<h2>Результаты измерений:</h2>");
+    str.append("<table border=\"1\" style = \"border-style:solid; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px;\" cellspacing=\"0\" cellpadding=\"0\" width =\"100%\">");
+
+    int pointCount = dom->tChannelList.at(index_).CalibtationList.last().pointList.count();
+    QString rowCount = QString::number(pointCount+1);
+
+    str.append("<tr>");
+    str.append("<td align=\"center\">Исследуемая точка, ");str.append(QChar(8451));str.append("</td>");
+    for (int i=0;i<pointCount;i++)
+    {
+        str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).pointInfo.value("value")+"</td>");
     }
-    qDebug()<<list.count();
+    str.append("</tr>");
+    str.append("<tr>");
+    str.append("<td  align=\"center\" colspan=\""+rowCount+"\">Значения результатов калибровки, "+dom->tChannelList.at(index_).channelInfo.value("unit")+"</tr>");
+
+    for (int i=1;i<=10;i++)
+    {
+        str.append("<tr>");str.append("<td>Значение "+QString::number(i));
+        for (int j=0;j<pointCount;j++)
+        {
+            str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(j).results.value("V"+QString::number(i))+"</td>");
+        }
+        str.append("</tr>");
+    }
+
+    str.append("<tr>");
+    str.append("<td  align=\"center\">Среднее значение, "+dom->tChannelList.at(index_).channelInfo.value("unit")+"</td>");
+    for (int i=0;i<pointCount;i++)
+    {
+        str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).calculations.value("av")+"</td>");
+    }
+    str.append("</tr>");
+
+    str.append("<tr>");
+    str.append("<td  align=\"center\">Стандартная неопределенность, "+dom->tChannelList.at(index_).channelInfo.value("unit")+"</td>");
+    for (int i=0;i<pointCount;i++)
+    {
+        str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).calculations.value("neoprIzm")+"</td>");
+    }
+    str.append("</tr>");
+
+    str.append("</table>");
+
+    str.append("<h1/>");
+
+    str.append("<table border=\"1\" style = \"border-style:solid; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px;\" cellspacing=\"0\" cellpadding=\"0\" width =\"100%\">");
+    str.append("<tr>");
+    str.append("<td colspan=\"3\" align=\"center\">Входные величины</td>");
+    str.append("<td align=\"center\">Тип неопределенности</td>");
+    str.append("<td align=\"center\">Вид распределения</td>");
+    str.append("<td colspan=\""+QString::number(pointCount)+"\" align=\"center\">Оцениваемое значение</td>");
+    str.append("</tr>");
+    str.append("<tr>");
+    str.append("<td align=\"center\">I<sub>s</sub></td>");
+    str.append("<td align=\"center\">мА</td>");
+    str.append("<td align=\"center\">Показания эталона</td>");
+    str.append("<td></td>");
+    str.append("<td></td>");
+    str.append("<td></td>");
+    str.append("<td></td>");
+    str.append("</tr>");
+    str.append("<tr>");
+    str.append("<td align=\"center\">P<sub>ind</sub></td>");
+    str.append("<td align=\"center\">МПа</td>");
+    str.append("<td align=\"center\">Показания ИК</td>");
+    str.append("<td>A</td>");
+    str.append("<td>нормальное</td>");
+    str.append("<td></td>");
+    str.append("<td></td>");
+    str.append("</tr>");
+
+    str.append("</table>");
     doc.setHtml(str);
     QPrinter printer;
     printer.setOutputFormat(QPrinter::PdfFormat);
-    printer.setOutputFileName("test.pdf");
+    printer.setOutputFileName("test1.pdf");
     doc.print(&printer);
     //printer.newPage();
 }

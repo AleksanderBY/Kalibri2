@@ -14,11 +14,11 @@ Dialog::Dialog(QWidget *parent) :
     dwm->setSubmitPolicy(QDataWidgetMapper::ManualSubmit);
     connect(dwm, SIGNAL(currentIndexChanged(int)),this, SLOT(start()));
     //Создаем валидаторы для полей
-    minValidator = new QDoubleValidator(-10000, 10000, 4);
+    minValidator = new QDoubleValidator(-20000, 200000, 4);
     ui->min->setValidator(minValidator);
-    maxValidator = new QDoubleValidator(-10000, 10000, 4);
+    maxValidator = new QDoubleValidator(-20000, 20000, 4);
     ui->max->setValidator(maxValidator);
-    pointsValidator = new QDoubleValidator(-10000, 10000, 4);
+    pointsValidator = new QDoubleValidator(-20000, 20000, 4);
     ui->point1->setValidator(pointsValidator);
     ui->point2->setValidator(pointsValidator);
     ui->point3->setValidator(pointsValidator);
@@ -35,7 +35,7 @@ Dialog::Dialog(QWidget *parent) :
     QRegExp cipherRegExp("^\\S{3,10}");
     cipherValidator = new QRegExpValidator(cipherRegExp);
     ui->cipher->setValidator(cipherValidator);
-    QRegExp nameRegExp("^\\S.{3,59}");
+    QRegExp nameRegExp("^\\S.{3,100}");
     nameValidator = new QRegExpValidator(nameRegExp);
     ui->name->setValidator(nameValidator);
     QRegExp unitRegExp("^\\S.{,9}");

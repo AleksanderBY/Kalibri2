@@ -194,7 +194,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
         }
         sendCOM(12);
         //термокомпенсация ручная 20 С
-        sendCOM(14);sendCOM(2);sendCOM(0);sendCOM(0);sendCOM(12);
+        sendCOM(14);sendCOM(2);sendCOM(1);sendCOM(0);sendCOM(12);
         break;
 
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -212,7 +212,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
         }
         sendCOM(12);
         //термокомпенсация ручная 20 С
-        sendCOM(14);sendCOM(2);sendCOM(0);sendCOM(0);sendCOM(12);
+        sendCOM(14);sendCOM(2);sendCOM(1);sendCOM(0);sendCOM(12);
         break;
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //   Термопара  тип B(IEC):
@@ -229,7 +229,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
         }
         sendCOM(12);
         //термокомпенсация ручная 20 С
-        sendCOM(14);sendCOM(2);sendCOM(0);sendCOM(0);sendCOM(12);
+        sendCOM(14);sendCOM(2);sendCOM(1);sendCOM(0);sendCOM(12);
         break;
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //   Термопара  тип A1(IEC):
@@ -246,7 +246,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
         }
         sendCOM(12);
         //термокомпенсация ручная 20 С
-        sendCOM(14);sendCOM(2);sendCOM(0);sendCOM(0);sendCOM(12);
+        sendCOM(14);sendCOM(2);sendCOM(1);sendCOM(0);sendCOM(12);
         break;
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //   Термопара  тип S(IEC):
@@ -263,7 +263,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
         }
         sendCOM(12);
         //термокомпенсация ручная 20 С
-        sendCOM(14);sendCOM(2);sendCOM(0);sendCOM(0);sendCOM(12);
+        sendCOM(14);sendCOM(2);sendCOM(1);sendCOM(0);sendCOM(12);
         break;
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //   Термопара  тип ХК (Рус):
@@ -280,7 +280,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
         }
         sendCOM(12);
         //термокомпенсация ручная 20 С
-        sendCOM(14);sendCOM(2);sendCOM(0);sendCOM(0);sendCOM(12);
+        sendCOM(14);sendCOM(2);sendCOM(1);sendCOM(0);sendCOM(12);
         break;
     default:
         error_val = 2;
@@ -640,5 +640,15 @@ bool Iksu2000Plugin::checkConditions(QHash<QString, QString> conditions)
         }
     }
     return true;
+}
+
+double Iksu2000Plugin::getErrorGeneral(float value, measurement type_value)
+{
+    return 0;
+}
+
+double Iksu2000Plugin::getErrorSecondary(float value, measurement type_value, QHash<QString, QString> conditions)
+{
+    return 0;
 }
 

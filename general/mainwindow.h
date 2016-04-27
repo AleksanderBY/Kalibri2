@@ -89,6 +89,7 @@ signals:
     error_calibrations(QString error);                       //Сигнал ошибки калибровки
     startWork(bool start);
     set_next_point_complete(bool complete);
+    get_next_values();                          //сигнал получения новых значений
 
 
 private:
@@ -123,17 +124,16 @@ private:
     bool automaticSet;                  //Признак автоматического задания генерации на эталоне
 
     //----------------Данные для калибровки
-    QList<PollClass*> * pollList;       //Список каналов выбранных для калибровки
-    QList<PollClass*> * currentPollList;    //Список каналов для калибровки текущей точки
+    QVector<TChannelCalibration*> * calibrationDom;
+    QVector<TChannelCalibration*> * currentCalibrationDom;
     QList<double> points;               //Список уникальных точек калибровки
     int currentPoint;                   //Индекс текущей точки калибровки
     QTimer * timer;                     //Таймер интервала опроса
     QTimer * delayTimer;                //Таймер для пауз в работе приложения
     int measurement1;                   //Номер измерения в калибровке
     measurement measurementType;        //Тип измерения текущий
-    //QMap<int, TChannelCalibration> calibrationChannel;
-    QMap<int, TCalibration> calibrationList;
-    QMap<int, TPoint> pointList;
+   // QMap<int, TCalibration> calibrationList;
+   // QMap<int, TPoint> pointList;
     int startDelay,delay;
     QHash<QString, QString> conditions;  //Условия калибровки
 

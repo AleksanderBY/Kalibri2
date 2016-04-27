@@ -24,6 +24,10 @@ SOURCES += main.cpp\
     axmlcalibrationmodel.cpp \
     environmentdialog.cpp \
     #aenvironment.cpp
+    reportdialog.cpp \
+    mustache.cpp \
+    amodelcalibration.cpp \
+    modeldialog.cpp
 
 HEADERS  += mainwindow.h \
     cpainterface.h \
@@ -38,12 +42,18 @@ HEADERS  += mainwindow.h \
     environmentdialog.h \
     #aenvironment.h \
     measurement.h \
-    calibrationdata.h
+    calibrationdata.h \
+    reportdialog.h \
+    mustache.h \
+    amodelcalibration.h \
+    modeldialog.h
 
 FORMS    += mainwindow.ui \
     settingsdialog.ui \
     createdialog.ui \
-    environmentdialog.ui
+    environmentdialog.ui \
+    reportdialog.ui \
+    modeldialog.ui
 
 DISTFILES += \
     settings.xml

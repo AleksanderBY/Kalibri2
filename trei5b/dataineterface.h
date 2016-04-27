@@ -9,6 +9,7 @@
 #include <QSqlRecord>
 #include <QHash>
 #include "measurement.h"
+#include "calibrationdata.h"
 
 //enum measurement { mA, mV, V, Om, C100M1_426, C100M1_428, C50M1_426, C50M1_428, C50P, C100P, CPt100IEC385, CTypeJ, CTypeK, CTypeB, CTypeA1, CTypeS, CTypeXK };
 
@@ -38,15 +39,14 @@ public:
     virtual QString getName() = 0;      //получение имени драйвера
     virtual bool initialization(QAbstractItemModel * model) = 0;        //инициализация если необходимо
     virtual QString getLastError() = 0;                                 //Получение последней ошибки
-    virtual bool getValues(QList<PollClass *> * pollList) = 0;              //Запрос данных от устройства
+    virtual bool getValues(QVector<TChannelCalibration*> * channelList) = 0;              //Запрос данных от устройства
     virtual bool getFieldsDB(QVector<QString> *fieldsDB) = 0;         //Получение полей базы данных
     virtual QStringList* supportTypes() = 0;                            //Поддерживаемые типы каналов
     virtual int editDialog(int row) =0;                                 //Диалог редактирования данных о канале
-    virtual QList<double> getPoints(QList<PollClass *> * pollList) = 0;     //Получение точек калибровки из списка
-    virtual QList<double> getParametrValue(QSqlRecord record) = 0;
-    virtual QString getTagAdress(QSqlRecord record) = 0;
-    virtual bool validationPollList(QList<PollClass *> * pollList) = 0;     //валидация каналов на совместную калибровку
-    virtual QList<measurement> getMeasurementTypes(QList<PollClass *> * pollList) = 0;    //
+    virtual QList<double> getPoints(QVector<TChannelCalibration*> * channelList, measurement measurementType) = 0;     //Получение точек калибровки из списка
+    virtual bool validationPollList(QVector<TChannelCalibration*> * channelList) = 0;     //валидация каналов на совместную калибровку
+    virtual QList<measurement> getMeasurementTypes(QVector<TChannelCalibration*> * channelList) = 0;    //
+    virtual bool polishingResults(QVector<TChannelCalibration*> * channelList, measurement measurementType) = 0;
 };
 
 QT_BEGIN_NAMESPACE

@@ -40,7 +40,7 @@ void Calibrator::start(DataInterface *di)
     for (int i=0; i<calibrationRecordList->count(); i++)
     {
         currentList.clear();
-        currentList = data->getParametrValue(calibrationRecordList->at(i));
+        //currentList = data->getParametrValue(calibrationRecordList->at(i));
         if (currentList.count()<1) continue;
         for (int j=0; j<currentList.count(); j++)
         {
