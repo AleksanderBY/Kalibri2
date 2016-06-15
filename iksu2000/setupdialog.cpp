@@ -64,3 +64,13 @@ QDate SetupDialog::getSROK()
 {
     return ui->SROK->date();
 }
+
+void SetupDialog::setAutoMode(bool autoMode)
+{
+    ui->autoMode->setChecked(autoMode);
+}
+
+bool SetupDialog::getAutoMode()
+{
+    return ui->autoMode->isChecked();
+}

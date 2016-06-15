@@ -39,7 +39,9 @@ public:
     virtual QString getName() = 0;      //получение имени драйвера
     virtual bool initialization(QAbstractItemModel * model) = 0;        //инициализация если необходимо
     virtual QString getLastError() = 0;                                 //Получение последней ошибки
-    virtual bool getValues(QVector<TChannelCalibration*> * channelList) = 0;              //Запрос данных от устройства
+    virtual bool createGroup(QVector<TChannelCalibration*> * channelList) = 0; //создание новой группы данных
+    virtual bool removeGroup() = 0; //Удаление группы
+    virtual bool getValues(QVector<TChannelCalibration*> * channelList) = 0;              //Запрос данных от устройства в автоматическом режиме
     virtual bool getFieldsDB(QVector<QString> *fieldsDB) = 0;         //Получение полей базы данных
     virtual QStringList* supportTypes() = 0;                            //Поддерживаемые типы каналов
     virtual int editDialog(int row) =0;                                 //Диалог редактирования данных о канале
@@ -47,6 +49,7 @@ public:
     virtual bool validationPollList(QVector<TChannelCalibration*> * channelList) = 0;     //валидация каналов на совместную калибровку
     virtual QList<measurement> getMeasurementTypes(QVector<TChannelCalibration*> * channelList) = 0;    //
     virtual bool polishingResults(QVector<TChannelCalibration*> * channelList, measurement measurementType) = 0;
+    virtual QVariant getParametr(QString param) = 0;        //Получение параметра калибровки по его имени
 };
 
 QT_BEGIN_NAMESPACE

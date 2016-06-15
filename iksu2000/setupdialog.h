@@ -23,6 +23,8 @@ public:
     QString getSKN();
     void setSROK(QDate SROK);
     QDate getSROK();
+    void setAutoMode(bool autoMode);
+    bool getAutoMode();
 
 
 private:

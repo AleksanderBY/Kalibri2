@@ -165,30 +165,30 @@ bool ADomCalibration::save(QString fileName)
     foreach (TChannelCalibration channel, tChannelList) {
         writer->writeStartElement("channel");
         foreach (QString key, channel.channelInfo.keys()) {
-            writer->writeAttribute(key, channel.channelInfo.value(key));
+            writer->writeAttribute(key, channel.channelInfo.value(key).toString());
         }
 
         foreach (TCalibration calibration, channel.CalibtationList) {
             writer->writeStartElement("calibration");
             foreach (QString keyCal, calibration.calibrationInfo.keys()) {
-                writer->writeAttribute(keyCal,calibration.calibrationInfo.value(keyCal));
+                writer->writeAttribute(keyCal,calibration.calibrationInfo.value(keyCal).toString());
             }
             foreach (TPoint point, calibration.pointList) {
                 writer->writeStartElement("point");
                 foreach (QString keyPoint, point.pointInfo.keys()) {
-                    writer->writeAttribute(keyPoint, point.pointInfo.value(keyPoint));
+                    writer->writeAttribute(keyPoint, point.pointInfo.value(keyPoint).toString());
                 }
                 if (point.results.count()>0) {
                     writer->writeStartElement("results");
                     foreach (QString keyRes, point.results.keys()) {
-                        writer->writeAttribute(keyRes, point.results.value(keyRes));
+                        writer->writeAttribute(keyRes, point.results.value(keyRes).toString());
                     }
                     writer->writeEndElement();
                 }
                 if (point.calculations.count()>0) {
                     writer->writeStartElement("calculations");
                     foreach (QString keyCalc, point.calculations.keys()) {
-                        writer->writeAttribute(keyCalc, point.calculations.value(keyCalc));
+                        writer->writeAttribute(keyCalc, point.calculations.value(keyCalc).toString());
                     }
                     writer->writeEndElement();
                 }
@@ -197,7 +197,7 @@ bool ADomCalibration::save(QString fileName)
             if (calibration.conditions.count()>0) {
                 writer->writeStartElement("conditions");
                 foreach (QString keyCond, calibration.conditions.keys()) {
-                    writer->writeAttribute(keyCond, calibration.conditions.value(keyCond));
+                    writer->writeAttribute(keyCond, calibration.conditions.value(keyCond).toString());
                 }
                 writer->writeEndElement();
             }
@@ -206,7 +206,7 @@ bool ADomCalibration::save(QString fileName)
                 foreach (TDevice device, calibration.deviceList) {
                     writer->writeStartElement("device");
                     foreach (QString dev, device.deviceInfo.keys()) {
-                        writer->writeAttribute(dev, device.deviceInfo.value(dev));
+                        writer->writeAttribute(dev, device.deviceInfo.value(dev).toString());
                     }
                     writer->writeEndElement();
                 }
@@ -382,7 +382,7 @@ bool ADomCalibration::parsing()
                     double summa = 0;
                     QList<double> p;
                     foreach (QString key, readPoint.results.keys()) {
-                        p.push_back(readPoint.results[key].replace(",",".").toDouble());
+                        p.push_back(readPoint.results[key].toString().replace(",",".").toDouble());
                         summa += p.last();
                     }
                     int n = p.count();
@@ -614,7 +614,7 @@ QVariant AXMLCalibrationListModel::data(const QModelIndex &index, int role) cons
     if (!index.isValid()) return QVariant();
     TCalibration calibration = dom->tChannelList.value(dom->getCurrentChannel()).CalibtationList.value(index.row());
     if (role == Qt::DisplayRole)
-            return calibration.calibrationInfo.value("date")+"/"+calibration.calibrationInfo.value("time")+" - "+calibration.calibrationInfo.value("uuid");
+            return calibration.calibrationInfo.value("date").toString()+"/"+calibration.calibrationInfo.value("time").toString()+" - "+calibration.calibrationInfo.value("uuid").toString();
         else
             return QVariant();
 }

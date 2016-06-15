@@ -15,33 +15,10 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Доступные драйвера устройств</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QListWidget" name="listWidget"/>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
-       <item>
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Доступные драйвера сретств измерения</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-    </layout>
+    <widget class="QTextEditCompleter" name="textEdit"/>
+   </item>
+   <item>
+    <widget class="QTextEdit" name="textEdit_2"/>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -55,6 +32,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QTextEditCompleter</class>
+   <extends>QTextEdit</extends>
+   <header>qtexteditcompleter.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

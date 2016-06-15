@@ -2,6 +2,7 @@
 #define REPORTDIALOG_H
 
 #include <QDialog>
+#include <QCompleter>
 
 namespace Ui {
 class reportdialog;
@@ -15,8 +16,12 @@ public:
     explicit reportdialog(QWidget *parent = 0);
     ~reportdialog();
 
+private slots:
+    void on_textEdit_textChanged();
+
 private:
     Ui::reportdialog *ui;
+    QCompleter *completer;
 };
 
 #endif // REPORTDIALOG_H

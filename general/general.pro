@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     reportdialog.cpp \
     mustache.cpp \
     amodelcalibration.cpp \
-    modeldialog.cpp
+    modeldialog.cpp \
+    qtexteditcompleter.cpp
 
 HEADERS  += mainwindow.h \
     cpainterface.h \
@@ -46,7 +47,8 @@ HEADERS  += mainwindow.h \
     reportdialog.h \
     mustache.h \
     amodelcalibration.h \
-    modeldialog.h
+    modeldialog.h \
+    qtexteditcompleter.h
 
 FORMS    += mainwindow.ui \
     settingsdialog.ui \

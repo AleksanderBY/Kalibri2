@@ -1,22 +1,21 @@
-#ifndef TREI_H
-#define TREI_H
+#ifndef SERIES5CCC_H
+#define SERIES5CCC_H
 
 #include <QObject>
 #include <QtPlugin>
-#include "dataineterface.h"
-#include "CLIE0DEF.H"
-#include <QVector>
-#include <QMap>
+#include "../trei5b/dataineterface.h"
 #include "dialog.h"
+#include "resultdialog.h"
+#include "opc.h"
 
-class Trei: public DataInterface
+class Series5ccc: public DataInterface
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "by.alexpozniak.kalibri2.datainterface" FILE "treiplugin.json")
+    Q_PLUGIN_METADATA(IID "by.alexpozniak.kalibri2.datainterface" FILE "series5cccplugin.json")
     Q_INTERFACES(DataInterface)
 public:
-    Trei();
-    ~Trei();
+    Series5ccc();
+    ~Series5ccc();
     QString getName() Q_DECL_OVERRIDE;
     bool initialization(QAbstractItemModel * model) Q_DECL_OVERRIDE;
     QString getLastError() Q_DECL_OVERRIDE;
@@ -32,15 +31,24 @@ public:
     bool polishingResults(QVector<TChannelCalibration*> * channelList, measurement measurementType) Q_DECL_OVERRIDE;
     QVariant getParametr(QString param) Q_DECL_OVERRIDE;
 private:
-    QVector<QString> *socketNameList;
-    QVector<int> * socketList;
     QString lastError;
     QStringList supportTypesList;
+    QStringList supportMeasurement;
     QAbstractItemModel * model;
     Dialog  dlg;
-    int createDevice(QString desk);
-
+    ResultDialog rd;
+    IOPCServer *opcServer;          //указатель на OPC-сервер
+    //Настройки создания группы на сервере
+    OPCHANDLE clientHandle;
+    DWORD regUptRete, revisedUptRate;
+    DWORD lcid;
+    OPCHANDLE m_hServerGroup;
+    OPCHANDLE *m_hServerItems;
+    int m_numOfItems;
+    IOPCItemMgt * m_IOPCItemMgt;   //Указатель на создаваемую группу
+    IOPCSyncIO * m_IOPCSyncIO;
+    OPCITEMRESULT *pAddResult;
 
 };
 
-#endif // TREI_H
+#endif // SERIES5CCC_H

@@ -12,6 +12,10 @@ const double AP385 = 3.9083e-3;
 const double BP385 = -5.775e-7;
 const double CP385 = -4.183e-12;
 
+const double AP391 = 3.9690e-3;
+const double BP391 = -5.841e-7;
+const double CP391 = -4.330e-12;
+
 class OmToC {
 public:
     static double getTSM428(double nomTS, double t)
@@ -35,6 +39,14 @@ public:
             return nomTS*(1+AP385*t+BP385*t*t+CP385*(t-100)*t*t*t);
         }
         return nomTS*(1+AP385*t+BP385*t*t);
+    }
+
+    static double getTSP391(double nomTS, double t)
+    {
+        if (t<0) {
+            return nomTS*(1+AP391*t+BP391*t*t+CP391*(t-100)*t*t*t);
+        }
+        return nomTS*(1+AP391*t+BP391*t*t);
     }
 };
 

@@ -27,20 +27,29 @@ void Iksu2000Plugin::initialization(QSettings *settings)
     ZN = settings->value("iksu-2000/zn").toString();
     SKN = settings->value("iksu-2000/skn").toString();
     SROK = settings->value("iksu-2000/srok").toDate();
+    autoMode = settings->value("iksu-2000/automode").toBool();
     serial->setPortName(portName);
 
-    if (serial->open(QIODevice::ReadWrite)) {
-        emit this->log("Порт "+portName+" успешно открыт!");serial->setBaudRate(QSerialPort::Baud9600);
-        serial->setStopBits(QSerialPort::OneStop);
-        serial->setDataBits(QSerialPort::Data8);
-        serial->setParity(QSerialPort::NoParity);
-        serial->setFlowControl(QSerialPort::NoFlowControl);
-//        serial->setDataTerminalReady(true);
-//        serial->setRequestToSend(false);
+    if (autoMode) {
+        if (serial->open(QIODevice::ReadWrite)) {
+            emit this->log("Порт "+portName+" успешно открыт!");serial->setBaudRate(QSerialPort::Baud9600);
+            serial->setStopBits(QSerialPort::OneStop);
+            serial->setDataBits(QSerialPort::Data8);
+            serial->setParity(QSerialPort::NoParity);
+            serial->setFlowControl(QSerialPort::NoFlowControl);
+    //        serial->setDataTerminalReady(true);
+    //        serial->setRequestToSend(false);
+        }
+        else {
+            emit this->log("Не удалось открыть порт "+portName+"!", Qt::red);
+            autoMode=false;
+            emit this->log("ИКСУ-2000: установлен ручной режим", Qt::yellow);
+        }
     }
     else {
-        emit this->log("Не удалось открыть порт "+portName+"!", Qt::red);
+        emit this->log("ИКСУ-2000: ручной режим", Qt::yellow);
     }
+
 }
 
 QString Iksu2000Plugin::getName()
@@ -63,7 +72,7 @@ void Iksu2000Plugin::test()
     if (serial->waitForBytesWritten(1500)) Sleep(800);
 }
 
-bool Iksu2000Plugin::setValue(float value, measurement type_value)
+bool Iksu2000Plugin::setValue(float value, measurement type_value, char thermoCompType, float compVal)
 {
     //Очищаем буфер команд
     sendArray.clear();
@@ -75,6 +84,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
     if (str_val[0]=='-') {
         minus=true;
         str_val.remove(0,1);
+        qDebug()<<"minus";
     }
 
     //Делим строку на целую и дробную части
@@ -89,6 +99,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
     if (str_list.count()<2) { str_list.append("0"); }
     //задаем паузу
     _delay=150;
+
     //Проверяем тип измерения
     switch (type_value) {
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -156,7 +167,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
         sendCOM(11);sendCOM(12);sendCOM(14);sendCOM(14);sendCOM(14);sendCOM(14);sendCOM(14);sendCOM(12);
         break;
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    //   Термосопротивление 50P(RUS):
+    //   Термосопротивление 50P(RUS) 391:
     case C50P:
         if (value>600||value<-200) { error_val=1; break; }
         l1=3;l2=2;
@@ -164,7 +175,7 @@ bool Iksu2000Plugin::setValue(float value, measurement type_value)
         sendCOM(11);sendCOM(12);sendCOM(14);sendCOM(14);sendCOM(14);sendCOM(14);sendCOM(14);sendCOM(14);sendCOM(12);
         break;
     //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    //   Термосопротивление 100P(RUS):
+    //   Термосопротивление 100P(RUS 391
     case C100P:
         if (value>600||value<-200) { error_val=1; break; }
         l1=3;l2=2;
@@ -320,6 +331,7 @@ bool Iksu2000Plugin::setup()
     sd.setZN(ZN);
     sd.setSKN(SKN);
     sd.setSROK(SROK);
+    sd.setAutoMode(autoMode);
     if  (sd.exec() == QDialog::Accepted) {
         if (portName!=sd.getPort())
         {
@@ -332,9 +344,11 @@ bool Iksu2000Plugin::setup()
         ZN = sd.getZN();
         SKN = sd.getSKN();
         SROK = sd.getSROK();
+        autoMode = sd.getAutoMode();
         settings->setValue("iksu-2000/zn", ZN);
         settings->setValue("iksu-2000/skn", SKN);
         settings->setValue("iksu-2000/srok", SROK);
+        settings->setValue("iksu-2000/automode", autoMode);
     }
     return true;
 }
@@ -597,13 +611,13 @@ double Iksu2000Plugin::getIndeterminacyGeneral(float value, measurement type_val
     return 0;
 }
 
-double Iksu2000Plugin::getIndeterminacySecondary(float value, measurement type_value, QHash<QString, QString> conditions)
+double Iksu2000Plugin::getIndeterminacySecondary(float value, measurement type_value, QVariantHash conditions)
 {
     float temperature;
     //проверяем наличие температуры в списке
     if (conditions.contains("temperature")) {
         bool ok;
-        temperature = conditions.value("temperature").toFloat(&ok);
+        temperature = conditions.value("temperature").toString().toFloat(&ok);
         if (ok) {
             if (temperature>=15&&temperature<=25) return 0;
             else return this->getIndeterminacyGeneral(value, type_value);
@@ -622,14 +636,14 @@ measurement Iksu2000Plugin::getMeasurenentType(QList<measurement> list)
     return notSupport;
 }
 
-bool Iksu2000Plugin::checkConditions(QHash<QString, QString> conditions)
+bool Iksu2000Plugin::checkConditions(QVariantHash conditions)
 {
     //Проверяем условия окружаующей среды на соответствие условиям эксплуатации прибора
     //температура от 15 до 30
     bool ok;
     //Температура
     if (conditions.contains("temperature")) {
-        float temperature = conditions.value("temperature").toFloat(&ok);
+        float temperature = conditions.value("temperature").toString().toFloat(&ok);
         if (!ok) {
             emit this->log("ИКСУ-2000: Неверное содержание поля \"температура\"", Qt::yellow);
             return false;
@@ -647,7 +661,7 @@ double Iksu2000Plugin::getErrorGeneral(float value, measurement type_value)
     return 0;
 }
 
-double Iksu2000Plugin::getErrorSecondary(float value, measurement type_value, QHash<QString, QString> conditions)
+double Iksu2000Plugin::getErrorSecondary(float value, measurement type_value, QVariantHash conditions)
 {
     return 0;
 }

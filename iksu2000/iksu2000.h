@@ -44,24 +44,25 @@ public:
     QString getName() Q_DECL_OVERRIDE;
     int showInfo() Q_DECL_OVERRIDE;
     void test() Q_DECL_OVERRIDE;
-    bool setValue(float value, measurement type_value) Q_DECL_OVERRIDE;
+    bool setValue(float value, measurement type_value, char thermoCompType = 'o', float compVal = 21) Q_DECL_OVERRIDE;
     bool setup() Q_DECL_OVERRIDE;
     QString getType() Q_DECL_OVERRIDE;
     QString getSN() Q_DECL_OVERRIDE;
     QString getSKN() Q_DECL_OVERRIDE;
     QString getSROK() Q_DECL_OVERRIDE;
     double getIndeterminacyGeneral(float value, measurement type_value) Q_DECL_OVERRIDE; //Получаем основную неопределенность прибора
-    double getIndeterminacySecondary(float value, measurement type_value, QHash<QString, QString> conditions) Q_DECL_OVERRIDE; //Получаем дополнительную неопределенность прибора
+    double getIndeterminacySecondary(float value, measurement type_value, QVariantHash conditions) Q_DECL_OVERRIDE; //Получаем дополнительную неопределенность прибора
     measurement getMeasurenentType(QList<measurement> list) Q_DECL_OVERRIDE;
-    bool checkConditions(QHash<QString, QString> conditions) Q_DECL_OVERRIDE;
+    bool checkConditions(QVariantHash conditions) Q_DECL_OVERRIDE;
     double getErrorGeneral(float value, measurement type_value) Q_DECL_OVERRIDE; //Погрешность прибора основная
-    double getErrorSecondary(float value, measurement type_value, QHash<QString, QString> conditions) Q_DECL_OVERRIDE; //Погрешность прибора дополнительная
+    double getErrorSecondary(float value, measurement type_value, QVariantHash conditions) Q_DECL_OVERRIDE; //Погрешность прибора дополнительная
 private:
     QSerialPort * serial;   //Порт-опроса
     QString portName;       //Название порта
     QString ZN;             //Заводской номер
     QString SKN;            //Номер свидетельства калибровки
     QDate SROK;           //Срок действия свидетельства до ...
+    bool autoMode;          //признак автоматического режима
     QSettings * settings;   //Ссылка хранилища настроек
     bool serial_open;
     Dialog iksu2000Dialog;

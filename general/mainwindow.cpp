@@ -13,9 +13,9 @@
 #include <QUuid>
 #include <QDateTime>
 #include "mustache.h"
-
-
-
+#include "reportdialog.h"
+#include "atagcompleter.h"
+#include "../ReportCreator/reportcreatorinterface.h"
 
 
 
@@ -102,8 +102,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->open_db, SIGNAL(triggered(bool)),this, SLOT(openDB()));
     automaticSet = false;
 
-    //Создание подключения к базе данных сигналов
-    //this->sgDb = QSqlDatabase::addDatabase("QSQLITE");
 
     //Создаем диалоги
     //Диалог настройки программы
@@ -186,6 +184,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    qDebug()<<"finish";
+    connectPluginLoader->unload();
     delete ui;
 }
 
@@ -225,9 +225,10 @@ void MainWindow::createDB()
         dom->addSetting("fieldscount", QString::number(fieldsDB->count()));
 
         for (int i=1; i<=fieldsDB->count(); i++) {
-            dom->addSetting("field"+QString::number(i), fieldsDB->at(i-1));
+            dom->addSetting("field"+QString::number(i-1), fieldsDB->at(i-1));
         }
-        dom->save("");
+        dom->addSetting("version","3");
+        dom->save(createDlg->getNameDB()+".xml");
     }
 }
 
@@ -236,7 +237,6 @@ void MainWindow::openDB()
     logger->log("Загрузка нового файла");
     //Вызываем диалог открытия файла базы xml
     QString str = QFileDialog::getOpenFileName(0, "Open Dialog", "ConnectDrivers", "*.xml");
-
     if (str=="") {
         logger->log("Загрузка файла отменена");
         return;
@@ -438,6 +438,8 @@ void MainWindow::on_pushButton_2_clicked()
         this->logger->log("Нет заданных точек для калибровки", Qt::yellow);
         return;
     }
+
+
     //Получаем значения задержек из первого канала
     startDelay = calibrationDom->at(0)->startDelay;
     delay = calibrationDom->at(0)->delay;
@@ -511,7 +513,7 @@ void MainWindow::sl_set_next_point()
     for (int i=0; i<calibrationDom->count(); i++) {
         foreach (QString key, calibrationDom->at(i)->tempPoint.keys()) {
             if (points.at(currentPoint)==calibrationDom->at(i)->tempPoint.value(key)) {
-                newPoint.pointInfo.insert("value", key);
+                newPoint.pointInfo.insert("value", key.replace(',','.'));
                 newPoint.pointInfo.insert("uuid", QUuid::createUuid().toString());
                 calibrationDom->at(i)->CalibtationList.last().pointList.append(newPoint);
                 currentCalibrationDom->push_back(calibrationDom->at(i));
@@ -519,6 +521,9 @@ void MainWindow::sl_set_next_point()
         }
     }
     qDebug()<<"Подписано: "+QString::number(currentCalibrationDom->count())+" каналов";
+
+    //НОВОЕ создаем группу в устройстве опроса
+    connectDriver->createGroup(currentCalibrationDom);
 
     this->logger->log("Устанавливаем на задатчике точку: "+QString::number(points.at(currentPoint)));
     qDebug()<<startDelay;
@@ -551,6 +556,10 @@ void MainWindow::timer_overflow()
     else {
         logger->log("Калибровка точки завершена");
         this->timer->stop();
+
+        //НОВОЕ удаляем группу в устройстве опросса
+        connectDriver->removeGroup();
+
         for (int i=0; i<currentCalibrationDom->count(); i++) {
             //**********************************************//
             //          Добавляем результаты                //
@@ -709,16 +718,8 @@ void MainWindow::on_pushButton_3_clicked()
     QVariantHash map;
 
     int index_ = ui->tableView->selectionModel()->currentIndex().row();
-    QVariantHash channalInfo;
-    foreach (QString key, dom->tChannelList.at(index_).channelInfo.keys()) {
-        channalInfo[key] = dom->tChannelList.at(index_).channelInfo[key];
-    }
-    map["channalInfo"] = channalInfo;
-    QVariantHash conditions;
-    foreach (QString key, dom->tChannelList.at(index_).CalibtationList.last().conditions.keys()) {
-        conditions[key] = dom->tChannelList.at(index_).CalibtationList.last().conditions.value(key);
-    }
-    map["conditions"] = conditions;
+    map["channalInfo"] = dom->tChannelList.at(index_).channelInfo;
+    map["conditions"] = dom->tChannelList.at(index_).CalibtationList.last().conditions;
 
     QVariantList deviceList;
     QVariantHash deviceMeasurment;
@@ -829,9 +830,9 @@ void MainWindow::on_pushButton_4_clicked()
     qDebug()<<index_;
     str.append("<h2>№1 от 05.04.2016</h2>");
     str.append("<h2 align=\"center\">Измерительного канала:</h2>");
-    str.append("<h2>"); str.append(dom->tChannelList.at(index_).channelInfo.value("cipher")+"   "+dom->tChannelList.at(index_).channelInfo.value("name"));str.append("</h2>");
-    str.append("<h2>Контроллер "); str.append(dom->tChannelList.at(index_).channelInfo.value("controller")+" Модуль "+dom->tChannelList.at(index_).channelInfo.value("module")+ " Канал "+ dom->tChannelList.at(index_).channelInfo.value("pipe"));str.append("</h2>");
-    str.append("<h2>Методика калибровки: "); str.append(dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value("metod"));str.append("</h2>");
+    str.append("<h2>"); str.append(dom->tChannelList.at(index_).channelInfo.value("cipher").toString()+"   "+dom->tChannelList.at(index_).channelInfo.value("name").toString());str.append("</h2>");
+    str.append("<h2>Контроллер "); str.append(dom->tChannelList.at(index_).channelInfo.value("controller").toString()+" Модуль "+dom->tChannelList.at(index_).channelInfo.value("module").toString()+ " Канал "+ dom->tChannelList.at(index_).channelInfo.value("pipe").toString());str.append("</h2>");
+    str.append("<h2>Методика калибровки: "); str.append(dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value("metod").toString());str.append("</h2>");
     str.append("<h2>Условия проведения калибровки: </h2>");
     //Формируем таблицу условий проведения калибровки
     str.append("<table border=\"1\" style = \"border-style:solid; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px;\" cellspacing=\"0\" cellpadding=\"0\" width =\"100%\"><tr style = \"margin-top:2px; margin-bottom:2px; margin-left:2px; margin-right:2px;\">");
@@ -841,10 +842,10 @@ void MainWindow::on_pushButton_4_clicked()
     str.append("<td align=\"center\">Напряжение питания, В</td>");
     str.append("</tr>");
     str.append("<tr>");
-    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("temperature")+"</td>");
-    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("humidity")+"</td>");
-    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("pressure")+"</td>");
-    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("voltage")+"</td>");
+    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("temperature").toString()+"</td>");
+    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("humidity").toString()+"</td>");
+    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("pressure").toString()+"</td>");
+    str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().conditions.value("voltage").toString()+"</td>");
     str.append("</tr></table>");
 
     str.append("<h2>Образцовые и вспомогательные СИ, применяемые при проведении калибровки: </h2>");
@@ -858,10 +859,10 @@ void MainWindow::on_pushButton_4_clicked()
     for (int i=0;i<dom->tChannelList.at(index_).CalibtationList.last().deviceList.count(); i++)
     {
         str.append("<tr>");
-        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("Type")+"</td>");
-        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("SN")+"</td>");
-        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("SKN")+"</td>");
-        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("SROK")+"</td>");
+        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("Type").toString()+"</td>");
+        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("SN").toString()+"</td>");
+        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("SKN").toString()+"</td>");
+        str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().deviceList.at(i).deviceInfo.value("SROK").toString()+"</td>");
         str.append("</tr>");
     }
     str.append("</table>");
@@ -891,7 +892,7 @@ void MainWindow::on_pushButton_4_clicked()
     str.append("<table border=\"1\" style = \"border-style:solid; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px;\" cellspacing=\"0\" cellpadding=\"0\" width =\"100%\">");
     str.append("<tr>");
     str.append("<td>Калибровку выполнил</td>");
-    str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value("position")+ " "+dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value("FIO")+"</td>");
+    str.append("<td>"+dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value("position").toString()+ " "+dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value("FIO").toString()+"</td>");
     str.append("</tr>");
     str.append("<tr>");
     str.append("<td>Подпись</td>");
@@ -913,35 +914,35 @@ void MainWindow::on_pushButton_4_clicked()
     str.append("<td align=\"center\">Исследуемая точка, ");str.append(QChar(8451));str.append("</td>");
     for (int i=0;i<pointCount;i++)
     {
-        str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).pointInfo.value("value")+"</td>");
+        str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).pointInfo.value("value").toString()+"</td>");
     }
     str.append("</tr>");
     str.append("<tr>");
-    str.append("<td  align=\"center\" colspan=\""+rowCount+"\">Значения результатов калибровки, "+dom->tChannelList.at(index_).channelInfo.value("unit")+"</tr>");
+    str.append("<td  align=\"center\" colspan=\""+rowCount+"\">Значения результатов калибровки, "+dom->tChannelList.at(index_).channelInfo.value("unit").toString()+"</tr>");
 
     for (int i=1;i<=10;i++)
     {
         str.append("<tr>");str.append("<td>Значение "+QString::number(i));
         for (int j=0;j<pointCount;j++)
         {
-            str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(j).results.value("V"+QString::number(i))+"</td>");
+            str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(j).results.value("V"+QString::number(i)).toString()+"</td>");
         }
         str.append("</tr>");
     }
 
     str.append("<tr>");
-    str.append("<td  align=\"center\">Среднее значение, "+dom->tChannelList.at(index_).channelInfo.value("unit")+"</td>");
+    str.append("<td  align=\"center\">Среднее значение, "+dom->tChannelList.at(index_).channelInfo.value("unit").toString()+"</td>");
     for (int i=0;i<pointCount;i++)
     {
-        str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).calculations.value("av")+"</td>");
+        str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).calculations.value("av").toString()+"</td>");
     }
     str.append("</tr>");
 
     str.append("<tr>");
-    str.append("<td  align=\"center\">Стандартная неопределенность, "+dom->tChannelList.at(index_).channelInfo.value("unit")+"</td>");
+    str.append("<td  align=\"center\">Стандартная неопределенность, "+dom->tChannelList.at(index_).channelInfo.value("unit").toString()+"</td>");
     for (int i=0;i<pointCount;i++)
     {
-        str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).calculations.value("neoprIzm")+"</td>");
+        str.append("<td align=\"center\">"+dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).calculations.value("neoprIzm").toString()+"</td>");
     }
     str.append("</tr>");
 
@@ -997,4 +998,24 @@ void MainWindow::on_pushButton_7_clicked()
     if (calibrationCount<=0) return;
     dom->tChannelList[dom->getCurrentChannel()].CalibtationList.remove(calibrationCount-1);
     XMLResultsModel->model_reset();
+}
+
+//вызов генератора отчетов
+void MainWindow::on_reportDialog_triggered()
+{
+    QPluginLoader * pl = new QPluginLoader(this);
+    pl->setFileName("ReportCreator.dll");
+    QObject * tempObject = pl->instance();
+    if (tempObject) {
+        ReportCreatorInterface * rc = qobject_cast<ReportCreatorInterface*>(tempObject);
+        if (rc) {
+            rc->initialization();
+            rc->getReportEditor();
+        }
+    //pl->unload();
+
+    }
+//    reportdialog * rd = new reportdialog(this);
+//    rd->exec();
+//    rd->deleteLater();
 }

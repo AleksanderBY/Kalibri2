@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>303</width>
-    <height>260</height>
+    <height>283</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -41,6 +41,13 @@
       <widget class="QComboBox" name="comboBox"/>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="autoMode">
+     <property name="text">
+      <string>Автоматический режим</string>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QLabel" name="label_6">

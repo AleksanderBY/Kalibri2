@@ -37,7 +37,7 @@ void MSR63Plugin::test()
 
 }
 
-bool MSR63Plugin::setValue(float value, measurement type_value)
+bool MSR63Plugin::setValue(float value, measurement type_value, char thermoCompType, float compVal)
 {
     //Проверяем запрашиваемые единицы измерения
     if (type_value!=Om) {
@@ -104,9 +104,9 @@ double MSR63Plugin::getIndeterminacyGeneral(float value, measurement type_value)
     return delta;
 }
 
-double MSR63Plugin::getIndeterminacySecondary(float value, measurement type_value, QHash<QString, QString> conditions)
+double MSR63Plugin::getIndeterminacySecondary(float value, measurement type_value, QVariantHash conditions)
 {
-    float temperature = conditions.value("temperature").toFloat();
+    float temperature = conditions.value("temperature").toString().toFloat();
     double delta = (0.025+0.000004*(111111.1/value-1))*value/100;
     if (temperature>=18&&temperature<=22) {
         return 0;
@@ -126,14 +126,14 @@ measurement MSR63Plugin::getMeasurenentType(QList<measurement> list)
     return notSupport;
 }
 
-bool MSR63Plugin::checkConditions(QHash<QString, QString> conditions)
+bool MSR63Plugin::checkConditions(QVariantHash conditions)
 {
     //Проверяем условия окружаующей среды на соответствие условиям эксплуатации прибора
     //температура от 15 до 30, влажность не более 80%
     bool ok;
     //Влажность
     if (conditions.contains("humidity")) {
-        float humidity = conditions.value("humidity").toFloat(&ok);
+        float humidity = conditions.value("humidity").toString().toFloat(&ok);
         if (!ok) {
             emit this->log("МСР-63: Неверное содержание поля \"влажность\"", Qt::yellow);
             return false;
@@ -145,7 +145,7 @@ bool MSR63Plugin::checkConditions(QHash<QString, QString> conditions)
     }
     //Температура
     if (conditions.contains("temperature")) {
-        float temperature = conditions.value("temperature").toFloat(&ok);
+        float temperature = conditions.value("temperature").toString().toFloat(&ok);
         if (!ok) {
             emit this->log("МСР-63: Неверное содержание поля \"температура\"", Qt::yellow);
             return false;
@@ -164,9 +164,9 @@ double MSR63Plugin::getErrorGeneral(float value, measurement type_value)
     return delta;
 }
 
-double MSR63Plugin::getErrorSecondary(float value, measurement type_value, QHash<QString, QString> conditions)
+double MSR63Plugin::getErrorSecondary(float value, measurement type_value, QVariantHash conditions)
 {
-    float temperature = conditions.value("temperature").toFloat();
+    float temperature = conditions.value("temperature").toString().toFloat();
     double delta = (0.025+0.000004*(111111.1/value-1))*value/100;
     if (temperature>=18&&temperature<=22) {
         return 0;

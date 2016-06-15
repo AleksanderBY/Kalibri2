@@ -5,4 +5,6 @@ SUBDIRS += \
     iksu2000 \
     trei5b \
     #manual \
-    MSR-63
+    MSR-63 \
+    series5ccc \
+    ReportCreator

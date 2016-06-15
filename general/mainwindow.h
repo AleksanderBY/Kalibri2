@@ -81,6 +81,9 @@ private slots:
 
     void on_pushButton_7_clicked();
 
+
+    void on_reportDialog_triggered();
+
 signals:
 
     end_init();                                 //сигнал окончания инициализации калибровки
@@ -135,7 +138,7 @@ private:
    // QMap<int, TCalibration> calibrationList;
    // QMap<int, TPoint> pointList;
     int startDelay,delay;
-    QHash<QString, QString> conditions;  //Условия калибровки
+    QVariantHash conditions;  //Условия калибровки
 
     //------------- ADomCalicration------------------------
     ADomCalibration *dom;

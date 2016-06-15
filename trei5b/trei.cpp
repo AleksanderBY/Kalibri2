@@ -27,6 +27,11 @@ Trei::Trei()
 
 }
 
+Trei::~Trei()
+{
+    qDebug()<<"Уничтожение драйвера TREI";
+}
+
 QString Trei::getName()
 {
     return "ISAGRAF 3.3 TCP/IP";
@@ -93,6 +98,16 @@ QString Trei::getLastError()
     return lastError;
 }
 
+bool Trei::createGroup(QVector<TChannelCalibration *> *channelList)
+{
+    return true;
+}
+
+bool Trei::removeGroup()
+{
+    return true;
+}
+
 
 
 bool Trei::getValues(QVector<TChannelCalibration*> * channelList)
@@ -102,14 +117,14 @@ bool Trei::getValues(QVector<TChannelCalibration*> * channelList)
     for (int i=0; i<channelList->count();i++) {
         //Проверяем существует ли поле имени контроллера в запросе
         if (channelList->at(i)->channelInfo.contains("controller")) {
-            qDebug()<<"Контроллер: "+channelList->at(i)->channelInfo.value("controller");
+            qDebug()<<"Контроллер: "+channelList->at(i)->channelInfo.value("controller").toString();
             //Проверяем добавлен ли уже контроллер в список
-            if (!controllerList.contains(channelList->at(i)->channelInfo.value("controller"))) {
+            if (!controllerList.contains(channelList->at(i)->channelInfo.value("controller").toString())) {
                //создаем соединение с контроллером
-               int controllerDevice = this->createDevice(channelList->at(i)->channelInfo.value("controller"));
+               int controllerDevice = this->createDevice(channelList->at(i)->channelInfo.value("controller").toString());
                //если соединение успешно то добавляем его в список
                if (controllerDevice) {
-                   controllerList.insert(channelList->at(i)->channelInfo.value("controller"), controllerDevice);
+                   controllerList.insert(channelList->at(i)->channelInfo.value("controller").toString(), controllerDevice);
                    qDebug()<<"Socket:"+QString::number(controllerDevice);
                }
                else
@@ -143,7 +158,7 @@ bool Trei::getValues(QVector<TChannelCalibration*> * channelList)
                 //Проверяем существует ли поле adress
                 if (channelList->at(i)->channelInfo.contains("adress")) {
                     //Преобразуем адрес в десятичное число
-                    quint16 adrr = channelList->at(i)->channelInfo.value("adress").toInt(&ok,16);
+                    quint16 adrr = channelList->at(i)->channelInfo.value("adress").toString().toInt(&ok,16);
                     //Если преобразование успешно то добавляем в список
                     if (ok) net_add_list(adrr);
                     else {
@@ -249,7 +264,6 @@ int Trei::editDialog(int row)
     }
 
     dlg.setRow(row);
-
     return dlg.exec();
 }
 
@@ -264,11 +278,11 @@ QList<double> Trei::getPoints(QVector<TChannelCalibration*> * channelList, measu
             continue;
         }
         //Проверяем поддержку типа измерительного канала
-        if (!supportTypesList.contains(channelList->at(i)->channelInfo.value("type"))) {
+        if (!supportTypesList.contains(channelList->at(i)->channelInfo.value("type").toString())) {
             qDebug()<<"Тип измерительного канала не поддерживается";
             continue;
         }
-        QString mType = channelList->at(i)->channelInfo.value("type");
+        QString mType = channelList->at(i)->channelInfo.value("type").toString();
         //Проверяем наличие поля min
         if (!channelList->at(i)->channelInfo.contains("min")) {
             qDebug()<<"Отсутствует поле min";
@@ -282,12 +296,12 @@ QList<double> Trei::getPoints(QVector<TChannelCalibration*> * channelList, measu
         //Проверяем правильность полей min, max
         double PMin,PMax;
         bool ok;
-        PMin = channelList->at(i)->channelInfo["min"].replace(',','.').toDouble(&ok);
+        PMin = channelList->at(i)->channelInfo["min"].toString().replace(',','.').toDouble(&ok);
         if (!ok) {
             qDebug()<<"Неправильное поле min";
             continue;
         }
-        PMax = channelList->at(i)->channelInfo["max"].replace(',','.').toDouble(&ok);
+        PMax = channelList->at(i)->channelInfo["max"].toString().replace(',','.').toDouble(&ok);
         if (!ok) {
             qDebug()<<"Неправильное поле max";
             continue;
@@ -313,13 +327,13 @@ QList<double> Trei::getPoints(QVector<TChannelCalibration*> * channelList, measu
                     continue;
                 }
                 //Проверяем корректность поля точки канала
-                double PPoint = channelList->at(i)->channelInfo["point"+QString::number(j)].replace(',','.').toDouble(&ok);
+                double PPoint = channelList->at(i)->channelInfo["point"+QString::number(j)].toString().replace(',','.').toDouble(&ok);
                 if (!ok) {
                     qDebug()<<"Неправильное значение поля точки "+QString::number(j);
                     continue;
                 }
                 double EPoint = (EMax-EMin)*(PPoint-PMin)/(PMax-PMin)+EMin;
-                channelList->at(i)->tempPoint.insert(channelList->at(i)->channelInfo.value("point"+QString::number(j)), EPoint);
+                channelList->at(i)->tempPoint.insert(channelList->at(i)->channelInfo.value("point"+QString::number(j)).toString(), EPoint);
                 double coef = (PMax-PMin)/(EMax-EMin);
                 channelList->at(i)->temp.insert("coefEtOsn", QString::number(coef, 'g', 12));
                 channelList->at(i)->temp.insert("coefEtDop", QString::number(coef, 'g', 12));
@@ -345,12 +359,12 @@ QList<double> Trei::getPoints(QVector<TChannelCalibration*> * channelList, measu
                     continue;
                 }
                 //Проверяем корректность поля точки канала
-                double PPoint = channelList->at(i)->channelInfo["point"+QString::number(j)].replace(',','.').toDouble(&ok);
+                double PPoint = channelList->at(i)->channelInfo["point"+QString::number(j)].toString().replace(',','.').toDouble(&ok);
                 if (!ok) {
                     qDebug()<<"Неправильное значение поля точки "+QString::number(j);
                     continue;
                 }
-                channelList->at(i)->tempPoint.insert(channelList->at(i)->channelInfo.value("point"+QString::number(j)), PPoint);
+                channelList->at(i)->tempPoint.insert(channelList->at(i)->channelInfo.value("point"+QString::number(j)).toString(), PPoint);
                 channelList->at(i)->temp.insert("coefEtOsn", QString::number(1));
                 channelList->at(i)->temp.insert("coefEtDop", QString::number(1));
                 listPoint.push_back(PPoint);
@@ -365,7 +379,7 @@ QList<double> Trei::getPoints(QVector<TChannelCalibration*> * channelList, measu
                         continue;
                     }
                     //Проверяем корректность поля точки канала
-                    double PPoint = channelList->at(i)->channelInfo["point"+QString::number(j)].replace(',','.').toDouble(&ok);
+                    double PPoint = channelList->at(i)->channelInfo["point"+QString::number(j)].toString().replace(',','.').toDouble(&ok);
                     if (!ok) {
                         qDebug()<<"Неправильное значение поля точки "+QString::number(j);
                         continue;
@@ -381,7 +395,7 @@ QList<double> Trei::getPoints(QVector<TChannelCalibration*> * channelList, measu
                         qDebug()<<"Платиновый термометр, точка - " + QString::number(EPoint);
                     }
 
-                    channelList->at(i)->tempPoint.insert(channelList->at(i)->channelInfo.value("point"+QString::number(j)), EPoint);
+                    channelList->at(i)->tempPoint.insert(channelList->at(i)->channelInfo.value("point"+QString::number(j)).toString(), EPoint);
                     double coef = PPoint/EPoint;
                     channelList->at(i)->temp.insert("coefEtOsn", QString::number(coef, 'g', 12));
                     channelList->at(i)->temp.insert("coefEtDop", QString::number(coef, 'g', 12));
@@ -432,7 +446,7 @@ bool Trei::validationPollList(QVector<TChannelCalibration *> *channelList)
     //в списке одно значение
     if (channelList->count()==1) return true;
     //много значений
-    QString firstType = channelList->at(0)->channelInfo.value("type");
+    QString firstType = channelList->at(0)->channelInfo.value("type").toString();
     for (int i=1; i<channelList->count();i++) {
         if (firstType!=channelList->at(i)->channelInfo.value("type")) return false;
     }
@@ -444,7 +458,7 @@ QList<measurement> Trei::getMeasurementTypes(QVector<TChannelCalibration*> * cha
 {
     QList<measurement> list;
     if (channelList->count()<=0) return list;
-    QString mType = channelList->at(0)->channelInfo.value("type");
+    QString mType = channelList->at(0)->channelInfo.value("type").toString();
     if (mType=="M732U 4-20mA"||mType== "M732U 0-5mA"||mType=="M745A 4-20mA"||mType== "M745A 0-5mA"){
         list<<mA;
     }
@@ -473,7 +487,7 @@ bool Trei::polishingResults(QVector<TChannelCalibration *> *channelList, measure
     if (channelList->count()<=0) return false;
 
     for (int i=0; i<channelList->count(); i++) {
-        QString mType = channelList->at(i)->channelInfo.value("type");
+        QString mType = channelList->at(i)->channelInfo.value("type").toString();
         switch (measurementType) {
         case mA: {
             double EMin, EMax, PMax, PMin;
@@ -518,6 +532,12 @@ bool Trei::polishingResults(QVector<TChannelCalibration *> *channelList, measure
         }
     }
     return true;
+}
+
+QVariant Trei::getParametr(QString param)
+{
+    QString str="";
+    return str;
 }
 
 

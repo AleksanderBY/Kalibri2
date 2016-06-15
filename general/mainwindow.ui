@@ -330,7 +330,7 @@
      <string>Формирование отчета</string>
     </property>
     <addaction name="action_3"/>
-    <addaction name="action_6"/>
+    <addaction name="reportDialog"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
@@ -405,7 +405,7 @@
     <string>Редактор моделей</string>
    </property>
   </action>
-  <action name="action_6">
+  <action name="reportDialog">
    <property name="text">
     <string>Редактор шаблонов</string>
    </property>
