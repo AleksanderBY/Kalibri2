@@ -4,6 +4,7 @@
 #include "reportcreatorinterface.h"
 #include "mainwindow.h"
 #include <QCompleter>
+#include <QDir>
 
 class ReportCreatorPlugin : public ReportCreatorInterface
 {
@@ -12,12 +13,15 @@ class ReportCreatorPlugin : public ReportCreatorInterface
     Q_INTERFACES(ReportCreatorInterface)
 public:
     ReportCreatorPlugin();
-    void initialization() Q_DECL_OVERRIDE;
+    void initialization(QDir * templateDir) Q_DECL_OVERRIDE;
     void getReportEditor() Q_DECL_OVERRIDE;
+    void setTemplateDir(QDir *dir) Q_DECL_OVERRIDE; //Установка каталога шаблонов
+    QDir * getTemplateDir() Q_DECL_OVERRIDE;        //Получение каталога шаблонов
+
 protected:
     MainWindow mw;
 private:
-    QCompleter * completer;             //объект автоподстановки
+    QDir * templateDir;     //Каталог хранения шаблонов
 };
 
 #endif // REPORTCREATOR_H

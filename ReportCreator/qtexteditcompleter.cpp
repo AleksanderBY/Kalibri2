@@ -18,7 +18,9 @@ QTextEditCompleter::QTextEditCompleter(QWidget *parent)
           <<"div"<<"dl"<<"dt"<<"em"<<"font"<<"h1"<<"h2"<<"h3"<<"h4"<<"h5"<<"h6"<<"head"<<"hr"<<"html"<<"i"
           <<"img"<<"kbd"<<"meta"<<"li"<<"nobr"<<"ol"<<"p"<<"pre"<<"qt"<<"s"<<"samp"<<"small"<<"span"<<"strong"
           <<"sub"<<"sup"<<"table"<<"tbody"<<"td"<<"tfoot"<<"th"<<"thead"<<"title"<<"tr"<<"tt"<<"u"<<"ul"<<"var";
-   cssList<<"background-color"<<"background-image"<<"color"<<"font-size";
+   cssList<<"background-color"<<"background-image"<<"color"<<"font-size"<<"font-family"<<"font-style"<<"font-weight";
+   fontSizeList<<"small"<<"medium"<<"large"<<"x-large"<<"xx-large"<<"pt"<<"px";
+   fontStyleList<<"normal"<<"italic"<<"oblique";
    autoCompleteList.insert("tag", tagList);
    autoCompleteList.insert("default", QStringList());
    autoCompleteList.insert("css", cssList);

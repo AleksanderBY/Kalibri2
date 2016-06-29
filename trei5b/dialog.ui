@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>302</width>
-    <height>473</height>
+    <height>499</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -151,7 +151,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="unit"/>
+          <widget class="QLineEdit" name="unit1"/>
          </item>
         </layout>
        </item>
@@ -327,6 +327,111 @@
         </layout>
        </item>
       </layout>
+     </item>
+     <item>
+      <widget class="QComboBox" name="unit">
+       <property name="iconSize">
+        <size>
+         <width>10</width>
+         <height>10</height>
+        </size>
+       </property>
+       <item>
+        <property name="text">
+         <string>Па</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>кПа</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>МПа</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>мкА</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>мА</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>А</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>мВ</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>В</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>кВ</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Ом</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>кОм</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>МОм</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Гц</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>об/мин</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>мм</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>см</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>м</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>мм/с</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>℃</string>
+        </property>
+       </item>
+      </widget>
      </item>
      <item>
       <widget class="QLabel" name="label_3">

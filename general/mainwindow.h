@@ -25,6 +25,7 @@
 #include <QPrinter>
 #include <QTextDocument>
 #include <QMediaPlayer>
+#include "reportdialog.h"
 
 #include "../trei5b/dataineterface.h"
 
@@ -84,6 +85,10 @@ private slots:
 
     void on_reportDialog_triggered();
 
+    void on_createReport_triggered();
+
+    void on_reCalc_triggered();
+
 signals:
 
     end_init();                                 //сигнал окончания инициализации калибровки
@@ -106,6 +111,7 @@ private:
     //QSqlTableModel *resModel;           //Модель представления результатов калибровки
     QSortFilterProxyModel *proxySgModel; //прокси модель представления данных
     QSortFilterProxyModel * proxyResModel;  //прокси модель результатов калибровки
+
     //------------------Интерфейс доступа к данным---------------------------
     DataInterface *connectDriver;       //драйвер соединения с контроллером
                                          //плагин драйвера должен находиться в папке ConnectDrivers
@@ -161,6 +167,9 @@ private:
     QSettings * settings;
     //----------------------Условия калибровки---------------
     EnvironmentDialog * ed;
+    //---------------------Генерация отчетов-----------------
+    reportdialog * rd;
+    QDir *templateDir;                  //Каталог для хранения шаблонов отчетов
 };
 
 

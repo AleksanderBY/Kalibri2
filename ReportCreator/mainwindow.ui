@@ -26,6 +26,13 @@
      <widget class="QTextEditCompleter" name="textEdit"/>
     </item>
     <item>
+     <widget class="QPushButton" name="pushButton_2">
+      <property name="text">
+       <string>Применить</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QTextEdit" name="textEdit_2"/>
     </item>
    </layout>

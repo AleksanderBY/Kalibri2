@@ -49,7 +49,7 @@ public:
     virtual bool validationPollList(QVector<TChannelCalibration*> * channelList) = 0;     //валидация каналов на совместную калибровку
     virtual QList<measurement> getMeasurementTypes(QVector<TChannelCalibration*> * channelList) = 0;    //
     virtual bool polishingResults(QVector<TChannelCalibration*> * channelList, measurement measurementType) = 0;
-    virtual QVariant getParametr(QString param) = 0;        //Получение параметра калибровки по его имени
+    virtual QVariant getParametr(QVector<TChannelCalibration*> * channelList, QString param) = 0;        //Получение параметра калибровки по его имени
 };
 
 QT_BEGIN_NAMESPACE

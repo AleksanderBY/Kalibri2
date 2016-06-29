@@ -20,15 +20,22 @@ public:
     QString getPosition();
     QString getFIO();
 
+    QString getCPADriverDir() const;
+    void setCPADriverDir(const QString &value);
+
 public slots:
     void accept();
+
+private slots:
+    void on_pushButton_clicked();
 
 private:
     Ui::SettingsDialog *ui;
     QSettings *settings;
 
-    QString position;
-    QString FIO;
+    QString position;       //Должность калибровщика
+    QString FIO;            //ФИО калибровщика
+    QString CPADriverDir;   //Каталог хранения драйверов приборов
 
     void loadSettings();
     void saveSettings();

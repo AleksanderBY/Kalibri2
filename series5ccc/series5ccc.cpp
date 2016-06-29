@@ -407,7 +407,7 @@ bool Series5ccc::polishingResults(QVector<TChannelCalibration *> *channelList, m
     return true;
 }
 
-QVariant Series5ccc::getParametr(QString param)
+QVariant Series5ccc::getParametr(QVector<TChannelCalibration*> * channelList, QString param)
 {
     QString str;
     return str;

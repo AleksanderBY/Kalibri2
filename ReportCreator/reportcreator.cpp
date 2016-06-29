@@ -11,9 +11,11 @@ ReportCreatorPlugin::ReportCreatorPlugin()
 //    mw.setCompleter(completer);
 }
 
-void ReportCreatorPlugin::initialization()
+void ReportCreatorPlugin::initialization(QDir *templateDir)
 {
     qDebug()<<"report creator";
+    this->templateDir = templateDir;
+    mw.setTemplateDir(templateDir);
     return;
 }
 
@@ -22,3 +24,14 @@ void ReportCreatorPlugin::getReportEditor()
 {
     mw.show();
 }
+QDir *ReportCreatorPlugin::getTemplateDir()
+{
+    return templateDir;
+}
+
+void ReportCreatorPlugin::setTemplateDir(QDir *dir)
+{
+    templateDir = dir;
+    mw.setTemplateDir(dir);
+}
+

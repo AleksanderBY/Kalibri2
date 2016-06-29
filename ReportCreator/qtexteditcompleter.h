@@ -31,8 +31,10 @@ private:
     QStringListModel * model;
     QVariantHash autoCompleteList;
     QString key;
-    QStringList tagList;
-    QStringList cssList;
+    QStringList tagList;        //html tags
+    QStringList cssList;        //css
+    QStringList fontSizeList;   //размеры шрифтов
+    QStringList fontStyleList;
     QCompleter * c;
     void setStringList(QString k);
 };

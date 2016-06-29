@@ -23,7 +23,7 @@ Trei::Trei()
     supportTypesList.append("M732U 200Om/50P");
     supportTypesList.append("M745A 200Om/50P");
     dlg.setSupportType(supportTypesList);
-    dlg.setModal(true);
+    //dlg.setModal(true);
 
 }
 
@@ -91,6 +91,22 @@ int Trei::createDevice(QString desk)
     }
 
     return 0;
+}
+//получение обозначениея величины
+void Trei::getDesignation(QVector<TChannelCalibration *> *channelList)
+{
+    QString mType, unit;
+
+    for (int i=0;i<channelList->count();i++){
+        mType = channelList->at(i)->channelInfo.value("type").toString();
+        unit = channelList->at(i)->channelInfo.value("unit").toString();
+        if (mType== "M745A 0-5mA"||mType=="M732U 0-5mA"||mType== "M745A 4-20mA"||mType=="M732U 4-20mA") {
+            if (unit=="Па"||unit=="кПа"||unit=="МПа") channelList->at(i)->channelInfo.insert("design", "p");
+            //qDebug()<<channelList->at(i)->channelInfo.value("design").toString();
+        }
+    }
+
+
 }
 
 QString Trei::getLastError()
@@ -534,9 +550,12 @@ bool Trei::polishingResults(QVector<TChannelCalibration *> *channelList, measure
     return true;
 }
 
-QVariant Trei::getParametr(QString param)
+QVariant Trei::getParametr(QVector<TChannelCalibration*> * channelList, QString param)
 {
     QString str="";
+        if (param=="design") {
+            getDesignation(channelList);
+        }
     return str;
 }
 

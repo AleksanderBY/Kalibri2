@@ -29,7 +29,7 @@ public:
     bool validationPollList(QVector<TChannelCalibration*> * channelList) Q_DECL_OVERRIDE;
     QList<measurement> getMeasurementTypes(QVector<TChannelCalibration*> * channelList) Q_DECL_OVERRIDE;
     bool polishingResults(QVector<TChannelCalibration*> * channelList, measurement measurementType) Q_DECL_OVERRIDE;
-    QVariant getParametr(QString param) Q_DECL_OVERRIDE;
+    QVariant getParametr(QVector<TChannelCalibration*> * channelList, QString param) Q_DECL_OVERRIDE;
 private:
     QString lastError;
     QStringList supportTypesList;

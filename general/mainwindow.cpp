@@ -14,7 +14,6 @@
 #include <QDateTime>
 #include "mustache.h"
 #include "reportdialog.h"
-#include "atagcompleter.h"
 #include "../ReportCreator/reportcreatorinterface.h"
 
 
@@ -178,7 +177,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(this, SIGNAL(get_next_values()),this->XMLResultsModel, SLOT(model_reset()));
 
-
+    //*****************************************************************************************************************
+    //                          Инициализация генератора отчетов
+    //*****************************************************************************************************************
+    //каталог шаблонов
+    templateDir = new QDir(qApp->applicationDirPath());
+    templateDir->cd("Templates");
+    rd = new reportdialog(this);
 //    qDebug()<<"Создание основного окна";
 }
 
@@ -716,8 +721,8 @@ void MainWindow::on_pushButton_3_clicked()
 {
     //карта данных для шаблона
     QVariantHash map;
-
     int index_ = ui->tableView->selectionModel()->currentIndex().row();
+    if (index_<0) return;
     map["channalInfo"] = dom->tChannelList.at(index_).channelInfo;
     map["conditions"] = dom->tChannelList.at(index_).CalibtationList.last().conditions;
 
@@ -735,19 +740,34 @@ void MainWindow::on_pushButton_3_clicked()
     foreach (QString key, dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.keys()) {
         calibrationInfo[key] = dom->tChannelList.at(index_).CalibtationList.last().calibrationInfo.value(key);
     }
+    calibrationInfo["countPoint"] = dom->tChannelList.at(index_).CalibtationList.last().pointList.count();
     map["calibrationInfo"] = calibrationInfo;
 
 
     QVariantList pointList;
+    QVariantHash point;
     QVariantHash pointInfo;
     QVariantHash results;
+    QVariantHash calculations;
     for (int i=0;i<dom->tChannelList.at(index_).CalibtationList.last().pointList.count();i++) {
+        pointInfo.clear();
         foreach (QString key, dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).pointInfo.keys()) {
             pointInfo[key] = dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).pointInfo.value(key);
         }
-        pointList<<deviceMeasurment;
+        point["pointInfo"] = pointInfo;
+        results.clear();
+        foreach (QString key, dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).results.keys()) {
+            results[key] = dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).results.value(key);
+        }
+        point["results"] = results;
+        calculations.clear();
+        foreach (QString key, dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).calculations.keys()) {
+            calculations[key] = dom->tChannelList.at(index_).CalibtationList.last().pointList.at(i).calculations.value(key);
+        }
+        point["calculations"] = calculations;
+        pointList<<point;
     }
-    map["devices"] = deviceList;
+    map["pointList"] = pointList;
 
 
 
@@ -761,7 +781,7 @@ void MainWindow::on_pushButton_3_clicked()
 //    }
 
     QTextDocument doc;
-    QFile f1("temp.html");
+    QFile f1(templateDir->absoluteFilePath("temp.html"));
     f1.open(QIODevice::ReadOnly);
 
     QTextStream stream(&f1);
@@ -824,6 +844,7 @@ void MainWindow::on_pushButton_4_clicked()
 //    }
 //    qDebug()<<list.count();
     int index_ = ui->tableView->selectionModel()->currentIndex().row();
+    if (index_<0) return;
     QString str;
     str.append("<h1 align=\"center\">Протокол калибровки</h1>");
     //str.append(QChar(581));
@@ -1009,7 +1030,7 @@ void MainWindow::on_reportDialog_triggered()
     if (tempObject) {
         ReportCreatorInterface * rc = qobject_cast<ReportCreatorInterface*>(tempObject);
         if (rc) {
-            rc->initialization();
+            rc->initialization(this->templateDir);
             rc->getReportEditor();
         }
     //pl->unload();
@@ -1018,4 +1039,35 @@ void MainWindow::on_reportDialog_triggered()
 //    reportdialog * rd = new reportdialog(this);
 //    rd->exec();
 //    rd->deleteLater();
+}
+
+void MainWindow::on_createReport_triggered()
+{
+    QFile fff;
+    fff.setFileName(templateDir->absoluteFilePath("temp1.hml"));
+    if (fff.open(QIODevice::ReadOnly|QIODevice::Text)) {
+        qDebug()<<"файл успешно открыт";
+    }
+    rd->exec();
+}
+
+//Пересчет результатов калибровки
+void MainWindow::on_reCalc_triggered()
+{
+    //Очищаем список калибровок
+    calibrationDom->clear();
+    //Определяем список индексов каналов калибровки
+    QModelIndexList calibrateIDList = ui->tableView->selectionModel()->selectedRows();
+    //Формируем Структуру для запроса калибровки
+    foreach (QModelIndex index, calibrateIDList) {
+        //Формируем экземпляр дома для калибровки
+        calibrationDom->append(&dom->tChannelList[index.row()]);
+     }
+    connectDriver->getParametr(calibrationDom, "design");
+    qDebug()<<calibrationDom->at(0)->channelInfo.value("design").toString();
+    foreach (QModelIndex index, calibrateIDList) {
+        qDebug()<<dom->tChannelList[index.row()].channelInfo.value("design").toString();
+    }
+
+    //if (index_<0) return;
 }

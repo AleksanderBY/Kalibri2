@@ -99,7 +99,7 @@ bool Dialog::hasAcceptableForm()
     if (ui->name->hasAcceptableInput() && ui->module->hasAcceptableInput() &&
             ui->pipe->hasAcceptableInput() && ui->controller->hasAcceptableInput() &&
             ui->min->hasAcceptableInput() && ui->max->hasAcceptableInput() &&
-            ui->unit->hasAcceptableInput() && ui->adress->hasAcceptableInput()) return true;
+            /*ui->unit->hasAcceptableInput() &&*/ ui->adress->hasAcceptableInput()) return true;
     else return false;
 }
 
@@ -159,9 +159,9 @@ void Dialog::on_name_textChanged(const QString &arg1)
 
 void Dialog::on_unit_textChanged(const QString &arg1)
 {
-    if (!ui->unit->hasAcceptableInput())
-        ui->unit->setStyleSheet("background-color: yellow");
-    else ui->unit->setStyleSheet("background-color: white");
+//    if (!ui->unit->hasAcceptableInput())
+//        ui->unit->setStyleSheet("background-color: yellow");
+//    else ui->unit->setStyleSheet("background-color: white");
 }
 
 void Dialog::on_adress_textChanged(const QString &arg1)
@@ -224,7 +224,7 @@ void Dialog::start()
     emit ui->pipe->textChanged("");
     emit ui->cipher->textChanged("");
     emit ui->name->textChanged("");
-    emit ui->unit->textChanged("");
+    //emit ui->unit->textChanged("");
     emit ui->adress->textChanged("");
     emit ui->min->textChanged("");
     emit ui->max->textChanged("");

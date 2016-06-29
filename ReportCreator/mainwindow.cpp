@@ -19,14 +19,9 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-bool MainWindow::setCompleter(QCompleter *completer)
-{
-    ui->textEdit->setCompleter(completer);
-}
-
 void MainWindow::on_textEdit_textChanged()
 {
-    ui->textEdit_2->setHtml(ui->textEdit->toPlainText());
+    //ui->textEdit_2->setHtml(ui->textEdit->toPlainText());
 }
 
 //сохраняем шаблон
@@ -48,7 +43,7 @@ void MainWindow::on_save_triggered()
 void MainWindow::on_open_triggered()
 {
     QFile file;
-    QString fileNameTemp = QFileDialog::getOpenFileName(0, "Открытие файла", "", "*html");
+    QString fileNameTemp = QFileDialog::getOpenFileName(0, "Открытие шаблона", templateDir->absolutePath() , "*html");
     file.setFileName(fileNameTemp);
     if (!file.open(QIODevice::ReadOnly|QIODevice::Text)) {
         return;
@@ -64,4 +59,19 @@ void MainWindow::on_open_triggered()
 void MainWindow::on_pushButton_clicked()
 {
     ui->textEdit->setVisible(!ui->textEdit->isVisible());
+}
+QDir *MainWindow::getTemplateDir() const
+{
+    return templateDir;
+}
+
+void MainWindow::setTemplateDir(QDir *value)
+{
+    templateDir = value;
+}
+
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    ui->textEdit_2->setHtml(ui->textEdit->toPlainText());
 }

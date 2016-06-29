@@ -399,6 +399,8 @@ bool ADomCalibration::parsing()
 
                     double neoprIzm = sqrt(koef*summa2);
                     readPoint.calculations.insert("neoprIzm", QString::number(neoprIzm,'g',12));
+                    double neoprIzmRas = neoprIzm*2;
+                    readPoint.calculations.insert("neoprIzmRas", QString::number(neoprIzmRas,'g',12));
                 }
                 readCalibration.pointList.push_back(readPoint);
             }
